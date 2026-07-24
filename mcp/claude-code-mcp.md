@@ -77,6 +77,22 @@ same `python -m graphify.serve …` command as the server entry, or the HTTP end
 - "How does the platform tell the kiosk to start recording?"
 - "What's the difference between the deployed audit engine and `conversation-intelligence`?"
 
+## Query patterns & limits (read this before wiring agents)
+
+Verified against the live server (graphify 0.9.25):
+
+- `get_node`, `get_neighbors`, `shortest_path` take **`label`** (fuzzy-matched), not `node`/`id`. Wrong param name → validation error.
+- `query_graph` answers are capped at a **~2,000-token budget** and say `TRUNCATED: showing N of M` when they overflow. Ask narrow questions, then drill in with `get_community` / `get_neighbors` on the hits.
+- `shortest_path` caps at **8 hops**. For far-apart symbols, route through a known intermediate (e.g. the Socket.IO device link, the audit callback, `session_ai_audit`).
+- Fuzzy start matching can pull lexical strays (asking about a DB "table" can match the UI `Table()` component). Prefer distinctive identifiers.
+- Provenance is explicit on every edge: `EXTRACTED` (98%) is structural fact, `INFERRED` (2%) includes the curated cross-repo concept→code bridges, `AMBIGUOUS` is a flagged uncertainty.
+
+## Known corpus issues (verified against source, 2026-07-23)
+
+- **SECURITY: hardcoded Deepgram API key** at `audio_services/stt-tts-using-api-only/app/config.py:6`. Rotate the key and move it to env. (The key does **not** appear in `graph.json` or the extraction cache — verified.)
+- `stt-tts-using-api-only` README claims ElevenLabs Scribe; the code exclusively uses **Deepgram nova-3**. The graph keeps this reference edge as documentation of the discrepancy.
+- `kiotel_web` frontend ships the five stock Next.js starter SVGs unused (no source references them).
+
 ## Refresh
 
 When the codebase changes, rebuild (`RUNBOOK.md` steps 2–4), commit the new `graphify-out/`,

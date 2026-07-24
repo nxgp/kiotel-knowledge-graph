@@ -107,6 +107,18 @@ To require auth, set `GRAPHIFY_API_KEY` in the container environment and give cl
 same key. The image is stateless (`--stateless`), so it can sit behind a load balancer and
 be restarted freely. Rebuild the image whenever `graphify-out/graph.json` changes.
 
+**Pushing to a registry** (adjust org/registry to yours; GHCR needs a classic PAT with
+`write:packages`):
+
+```bash
+docker tag kiotel-graph-mcp ghcr.io/<org>/kiotel-graph-mcp:latest
+echo $GHCR_PAT | docker login ghcr.io -u <user> --password-stdin
+docker push ghcr.io/<org>/kiotel-graph-mcp:latest
+```
+
+Production checklist: set `GRAPHIFY_API_KEY`, put TLS in front (the server speaks plain
+HTTP), and point clients at `https://<host>/mcp`. The image has a TCP healthcheck on :8080.
+
 ## Refreshing the graph later
 
 Re-run steps 2–4. Graphify supports `--update` to re-extract only changed files, so

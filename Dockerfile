@@ -13,6 +13,9 @@ COPY graphify-out/graph.json /app/graph.json
 
 EXPOSE 8080
 
+HEALTHCHECK --interval=30s --timeout=3s --start-period=10s \
+  CMD python -c "import socket; socket.create_connection(('127.0.0.1', 8080), 2).close()"
+
 # --stateless so the container can sit behind a load balancer / restart freely.
 ENTRYPOINT ["python", "-m", "graphify.serve", "/app/graph.json", \
             "--transport", "http", "--host", "0.0.0.0", "--port", "8080", \
