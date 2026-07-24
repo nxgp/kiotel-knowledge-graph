@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kiotel Knowledge Graph MCP — Architecture</title>
+<style>
+  :root {
+    --bg: #f7f7f5; --panel: #ffffff; --ink: #1a1a1a; --muted: #6b6b6b;
+    --line: #d9d9d4; --accent: #0f6b5c; --accent-soft: #e3f0ed;
+    --repo: #eef2fa; --repo-line: #9db3d8;
+    --pipe: #fdf3e3; --pipe-line: #d8b273;
+    --serve: #ece7f7; --serve-line: #a795d6;
+    --client: #e9f4e7; --client-line: #8fbb86;
+    --warn-bg: #fdeaea; --warn-line: #cc6b6b;
+    --code-bg: #f0f0ec;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #16181a; --panel: #1f2225; --ink: #e8e6e1; --muted: #9a9a94;
+      --line: #3a3d40; --accent: #5fc4ae; --accent-soft: #1d3833;
+      --repo: #232c3b; --repo-line: #4d6491;
+      --pipe: #37301f; --pipe-line: #937b47;
+      --serve: #2b2538; --serve-line: #6f5fa3;
+      --client: #24301f; --client-line: #5f7f57;
+      --warn-bg: #3a2424; --warn-line: #a05252;
+      --code-bg: #26292c;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--ink);
+    font: 16px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  main { max-width: 980px; margin: 0 auto; padding: 40px 24px 80px; }
+  h1 { font-size: 1.9rem; margin: 0 0 6px; letter-spacing: -0.02em; }
+  h2 { font-size: 1.25rem; margin: 48px 0 12px; letter-spacing: -0.01em; }
+  p.lede { color: var(--muted); margin: 0 0 24px; max-width: 62ch; }
+  .tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; margin: 24px 0 8px; }
+  .tile { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; }
+  .tile b { display: block; font-size: 1.45rem; letter-spacing: -0.02em; }
+  .tile span { color: var(--muted); font-size: 0.82rem; }
+  .diagram-wrap { overflow-x: auto; background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 18px; }
+  svg { display: block; min-width: 860px; max-width: 100%; height: auto; margin: 0 auto; }
+  svg text { font: 13px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; fill: var(--ink); }
+  svg text.small { font-size: 11px; fill: var(--muted); }
+  svg text.tag  { font-size: 10.5px; fill: var(--muted); }
+  svg .repo   { fill: var(--repo);   stroke: var(--repo-line); }
+  svg .pipe   { fill: var(--pipe);   stroke: var(--pipe-line); }
+  svg .serve  { fill: var(--serve);  stroke: var(--serve-line); }
+  svg .client { fill: var(--client); stroke: var(--client-line); }
+  svg .art    { fill: var(--accent-soft); stroke: var(--accent); }
+  svg .edge   { stroke: var(--muted); stroke-width: 1.4; fill: none; marker-end: url(#arr); }
+  table { width: 100%; border-collapse: collapse; background: var(--panel); border: 1px solid var(--line); border-radius: 10px; overflow: hidden; font-size: 0.92rem; }
+  th, td { text-align: left; padding: 9px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { background: var(--code-bg); font-weight: 600; }
+  tr:last-child td { border-bottom: none; }
+  code, .mono { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-size: 0.87em; background: var(--code-bg); border-radius: 4px; padding: 1px 5px; }
+  pre { background: var(--code-bg); border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; overflow-x: auto; font-size: 0.85rem; line-height: 1.5; }
+  pre code { background: none; padding: 0; }
+  ol.flow { counter-reset: step; list-style: none; padding: 0; }
+  ol.flow li { position: relative; padding: 10px 14px 10px 52px; background: var(--panel); border: 1px solid var(--line); border-radius: 10px; margin-bottom: 8px; }
+  ol.flow li::before {
+    counter-increment: step; content: counter(step);
+    position: absolute; left: 14px; top: 50%; transform: translateY(-50%);
+    width: 26px; height: 26px; border-radius: 50%;
+    background: var(--accent); color: #fff; font-weight: 700; font-size: 0.85rem;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .warn { background: var(--warn-bg); border: 1px solid var(--warn-line); border-radius: 10px; padding: 12px 16px; margin: 10px 0; font-size: 0.92rem; }
+  .foot { color: var(--muted); font-size: 0.82rem; margin-top: 56px; border-top: 1px solid var(--line); padding-top: 16px; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Kiotel Knowledge Graph MCP</h1>
+  <p class="lede">One queryable graph of the entire Kiotel system — four repos, their code
+  structure, and the intent docs that explain <em>why</em> the pieces connect — served to AI
+  assistants over the Model Context Protocol (Streamable HTTP).</p>
+
+  <div class="tiles">
+    <div class="tile"><b>7,770</b><span>nodes</span></div>
+    <div class="tile"><b>18,832</b><span>edges</span></div>
+    <div class="tile"><b>411</b><span>communities</span></div>
+    <div class="tile"><b>4</b><span>repos, one component (88%)</span></div>
+    <div class="tile"><b>98%</b><span>EXTRACTED provenance</span></div>
+  </div>
+
+  <h2>Architecture</h2>
+  <div class="diagram-wrap">
+  <svg viewBox="0 0 900 560" xmlns="http://www.w3.org/2000/svg" role="img"
+       aria-label="Architecture: four repos flow into a build root, through the Graphify pipeline into graph.json, served by a Docker MCP container to AI assistants">
+    <defs>
+      <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+        <path d="M0,0 L10,5 L0,10 z" fill="currentColor" opacity="0.65"/>
+      </marker>
+    </defs>
+
+    <!-- Row 1: four repos -->
+    <g>
+      <rect class="repo" x="20"  y="20" width="200" height="64" rx="9"/>
+      <text x="120" y="46" text-anchor="middle" font-weight="600">kiotel_hardware</text>
+      <text x="120" y="66" text-anchor="middle" class="small">lobby kiosk · .NET / WebView2</text>
+
+      <rect class="repo" x="240" y="20" width="200" height="64" rx="9"/>
+      <text x="340" y="46" text-anchor="middle" font-weight="600">kiotel_web (hub)</text>
+      <text x="340" y="66" text-anchor="middle" class="small">Express · Knex · Socket.IO · Next.js</text>
+
+      <rect class="repo" x="460" y="20" width="200" height="64" rx="9"/>
+      <text x="560" y="46" text-anchor="middle" font-weight="600">audio_services</text>
+      <text x="560" y="66" text-anchor="middle" class="small">call recording + AI audit · FastAPI</text>
+
+      <rect class="repo" x="680" y="20" width="200" height="64" rx="9"/>
+      <text x="780" y="46" text-anchor="middle" font-weight="600">kiotel-pms</text>
+      <text x="780" y="66" text-anchor="middle" class="small">rooms · rates · bookings</text>
+    </g>
+
+    <path class="edge" style="color:var(--muted)" d="M120,84 L120,108 Q120,118 130,118 L430,118"/>
+    <path class="edge" style="color:var(--muted)" d="M340,84 L340,112"/>
+    <path class="edge" style="color:var(--muted)" d="M560,84 L560,108 Q560,118 550,118 L450,118"/>
+    <path class="edge" style="color:var(--muted)" d="M780,84 L780,104 Q780,114 770,114 L455,116"/>
+
+    <!-- build root -->
+    <rect class="pipe" x="290" y="118" width="320" height="52" rx="9"/>
+    <text x="450" y="140" text-anchor="middle" font-weight="600">build-root/  (scripts/build-graph.sh)</text>
+    <text x="450" y="158" text-anchor="middle" class="small">source + docs only — deps/binaries/models excluded</text>
+
+    <path class="edge" style="color:var(--muted)" d="M450,170 L450,194"/>
+
+    <!-- pipeline -->
+    <rect class="pipe" x="120" y="196" width="660" height="112" rx="10"/>
+    <text x="450" y="219" text-anchor="middle" font-weight="600">Graphify extraction pipeline (deep mode)</text>
+    <g>
+      <rect class="art" x="140" y="232" width="195" height="60" rx="8"/>
+      <text x="237" y="255" text-anchor="middle">Structural pass</text>
+      <text x="237" y="273" text-anchor="middle" class="small">tree-sitter AST · free · 951 files</text>
+
+      <rect class="art" x="352" y="232" width="195" height="60" rx="8"/>
+      <text x="449" y="255" text-anchor="middle">Semantic pass</text>
+      <text x="449" y="273" text-anchor="middle" class="small">LLM agents on docs/images · intent</text>
+
+      <rect class="art" x="564" y="232" width="195" height="60" rx="8"/>
+      <text x="661" y="255" text-anchor="middle">Gap repair + bridges</text>
+      <text x="661" y="273" text-anchor="middle" class="small">98 verified concept→code edges</text>
+    </g>
+
+    <path class="edge" style="color:var(--muted)" d="M450,308 L450,332"/>
+
+    <!-- graph.json -->
+    <rect class="art" x="300" y="334" width="300" height="54" rx="10"/>
+    <text x="450" y="357" text-anchor="middle" font-weight="600">graphify-out/graph.json</text>
+    <text x="450" y="375" text-anchor="middle" class="small">7,770 nodes · 18,832 edges · committed to git</text>
+
+    <path class="edge" style="color:var(--muted)" d="M450,388 L450,412"/>
+    <text x="466" y="406" class="tag">COPY&#8217;d into image at build</text>
+
+    <!-- docker serve -->
+    <rect class="serve" x="230" y="414" width="440" height="66" rx="10"/>
+    <text x="450" y="438" text-anchor="middle" font-weight="600">Docker: python -m graphify.serve — Streamable HTTP MCP</text>
+    <text x="450" y="458" text-anchor="middle" class="small">:8080 /mcp · stateless · TCP healthcheck · optional GRAPHIFY_API_KEY · TLS in front</text>
+
+    <path class="edge" style="color:var(--muted)" d="M450,480 L450,504"/>
+    <text x="466" y="498" class="tag">JSON-RPC tools/call</text>
+
+    <!-- clients -->
+    <rect class="client" x="180" y="506" width="540" height="44" rx="10"/>
+    <text x="450" y="533" text-anchor="middle" font-weight="600">Claude Code · Cursor · Codex · production agents</text>
+  </svg>
+  </div>
+
+  <h2>What it does</h2>
+  <p>The server loads <code>graph.json</code> into NetworkX at startup and exposes graph
+  operations as MCP tools. Every node carries its source file and line
+  (<code>kiotel_hardware/kiosk_Source/kiosk/frmMainScreen.cs L464</code>), so answers are
+  citations, not vibes. Every edge carries provenance: <b>EXTRACTED</b> = structural fact
+  (import, call, FK, doc reference), <b>INFERRED</b> = curated inference (includes the
+  cross-repo concept→code bridges), <b>AMBIGUOUS</b> = flagged uncertainty kept visible on
+  purpose.</p>
+
+  <h2>MCP tools</h2>
+  <table>
+    <tr><th>Tool</th><th>Arguments</th><th>Use it for</th></tr>
+    <tr><td><code>query_graph</code></td><td><code>question</code></td><td>Natural-language BFS over the graph — broad "how does X work / what touches Y" questions</td></tr>
+    <tr><td><code>shortest_path</code></td><td><code>source</code>, <code>target</code></td><td>Trace how two symbols/concepts connect (max 8 hops)</td></tr>
+    <tr><td><code>get_node</code></td><td><code>label</code></td><td>Locate one symbol: source file, line, community, degree</td></tr>
+    <tr><td><code>get_neighbors</code></td><td><code>label</code></td><td>Everything directly wired to a node, with edge relations</td></tr>
+    <tr><td><code>get_community</code></td><td><code>community_id</code></td><td>List a cluster (e.g. community 120 = the audit engine)</td></tr>
+    <tr><td><code>god_nodes</code></td><td><code>limit</code></td><td>Most-connected abstractions (<code>apiFetch()</code>, <code>frmMainScreen</code>, <code>db</code>…)</td></tr>
+    <tr><td><code>graph_stats</code></td><td>—</td><td>Node/edge/community counts + provenance split</td></tr>
+    <tr><td><code>list_prs</code> / <code>get_pr_impact</code> / <code>triage_prs</code></td><td>PR refs</td><td>Map a changeset onto the graph (impact analysis)</td></tr>
+  </table>
+
+  <h2>How a query flows</h2>
+  <ol class="flow">
+    <li>Agent calls <code>tools/call</code> → <code>query_graph</code> with a natural-language question over JSON-RPC at <code>/mcp</code>.</li>
+    <li>The server fuzzy-matches question terms against node labels to pick seed nodes.</li>
+    <li>BFS traversal (depth 3 by default) expands the seeds across EXTRACTED and INFERRED edges — including the cross-repo bridges.</li>
+    <li>Results are trimmed to a ~2,000-token budget (the response says <code>TRUNCATED: showing N of M</code> when it cuts).</li>
+    <li>Each returned node includes <code>src=…file L…</code> and its community id — follow up with <code>get_community</code> / <code>get_neighbors</code> to drill in.</li>
+  </ol>
+
+  <h2>Real examples (from the live server)</h2>
+  <pre><code>shortest_path("ProcessCommand", "socket.io")
+  .processCommand() ← processCommand RELAY Dispatcher
+                    ← Socket.IO Device Link (Connect2Server) → socket.io      # kiosk ↔ platform, 3 hops
+
+shortest_path("frmMainScreen", "welcome page")
+  frmMainScreen ← frmMainScreen.cs —references→ Kiotel Welcome Page           # verified at L464
+
+get_neighbors("session_ai_audit")
+  ← Audio Audit Transcript Service          [shares_data_with]
+  ← conversation_audits table               [shares_data_with]
+  ← Audit Callback — POST to platform       [shares_data_with]                # who writes the audit</code></pre>
+
+  <h2>Limits &amp; gotchas</h2>
+  <table>
+    <tr><th>Limit</th><th>Work with it</th></tr>
+    <tr><td>Node-lookup tools take <code>label</code>, not <code>node</code>/<code>id</code></td><td>Wrong param name returns a validation error</td></tr>
+    <tr><td><code>query_graph</code> ~2,000-token budget</td><td>Ask narrow; drill in with <code>get_neighbors</code>/<code>get_community</code></td></tr>
+    <tr><td><code>shortest_path</code> caps at 8 hops</td><td>Route via an intermediate (socket link, audit callback, <code>session_ai_audit</code>)</td></tr>
+    <tr><td>Fuzzy matching can grab lexical strays ("table" → UI <code>Table()</code>)</td><td>Use distinctive identifiers</td></tr>
+  </table>
+
+  <h2>Known corpus issues (verified 2026-07-23)</h2>
+  <div class="warn"><b>Security:</b> hardcoded Deepgram API key at
+  <code>audio_services/stt-tts-using-api-only/app/config.py:6</code> — rotate and move to
+  env. Verified absent from <code>graph.json</code> and the extraction cache.</div>
+  <div class="warn"><b>Doc/code drift:</b> the <code>stt-tts-using-api-only</code> README
+  claims ElevenLabs Scribe; the code exclusively uses Deepgram nova-3. The graph keeps this
+  edge as documentation of the discrepancy.</div>
+  <div class="warn"><b>Dead assets:</b> <code>kiotel_web</code> frontend ships the five stock
+  Next.js starter SVGs with no source references.</div>
+
+  <p class="foot">Repo: <code>github.com/nxgp/kiotel-knowledge-graph</code> · engine:
+  graphifyy[mcp] 0.9.25 · build: deep mode, 2026-07-23 · wiring details in
+  <code>mcp/claude-code-mcp.md</code>, rebuild steps in <code>RUNBOOK.md</code>.</p>
+</main>
+</body>
+</html>
