@@ -1,0 +1,995 @@
+{
+ "bridges": [
+  {
+   "relation": "references",
+   "confidence": "INFERRED",
+   "confidence_score": 0.75,
+   "source_file": "audio_services/docs/DATA_MODEL.md",
+   "source_location": null,
+   "weight": 1.0,
+   "source": "audio_services_docs_data_model_conversation_audits",
+   "target": "audio_services_alembic_versions_20260601_0004_conversation_audits_upgrade"
+  },
+  {
+   "relation": "references",
+   "confidence": "INFERRED",
+   "confidence_score": 0.75,
+   "source_file": "audio_services/docs/DATA_MODEL.md",
+   "source_location": null,
+   "weight": 1.0,
+   "source": "audio_services_docs_data_model_conversation_audits",
+   "target": "audio_services_alembic_versions_20260601_0004_conversation_audits_downgrade"
+  },
+  {
+   "relation": "references",
+   "confidence": "INFERRED",
+   "confidence_score": 0.75,
+   "source_file": "audio_services/README.md",
+   "source_location": null,
+   "weight": 1.0,
+   "source": "audio_services_readme_audit_pipeline",
+   "target": "audio_services_app_audit_call_analyze"
+  },
+  {
+   "relation": "references",
+   "confidence": "INFERRED",
+   "confidence_score": 0.75,
+   "source_file": "audio_services/docs/INTEGRATIONS.md",
+   "source_location": null,
+   "weight": 1.0,
+   "source": "audio_services_docs_integrations_recording_control",
+   "target": "audio_services_app_auth_verify_internal_secret"
+  },
+  {
+   "relation": "references",
+   "confidence": "INFERRED",
+   "confidence_score": 0.75,
+   "source_file": "audio_services/docs/INTEGRATIONS.md",
+   "source_location": null,
+   "weight": 1.0,
+   "source": "audio_services_docs_integrations_shared_internal_secret",
+   "target": "audio_services_app_auth_verify_internal_secret"
+  },
+  {
+   "relation": "references",
+   "confidence": "INFERRED",
+   "confidence_score": 0.75,
+   "source_file": "audio_services/docs/ARCHITECTURE.md",
+   "source_location": null,
+   "weight": 1.0,
+   "source": "audio_services_docs_architecture_single_worker_constraint",
+   "target": "audio_services_app_main_acquire_worker_lock"
+  },
+  {
+   "relation": "references",
+   "confidence": "INFERRED",
+   "confidence_score": 0.75,
+   "source_file": "audio_services/docs/DATA_MODEL.md",
+   "source_location": null,
+   "weight": 1.0,
+   "source": "audio_services_docs_data_model_conversation_recordings",
+   "target": "audio_services_app_post_process_repair"
+  },
+  {
+   "relation": "references",
+   "confidence": "INFERRED",
+   "confidence_score": 0.75,
+   "source_file": "audio_services/README.md",
+   "source_location": null,
+   "weight": 1.0,
+   "source": "audio_services_readme_audit_pipeline",
+   "target": "audio_services_app_sessions_finalize_session"
+  },
+  {
+   "relation": "references",
+   "confidence": "INFERRED",
+   "confidence_score": 0.75,
+   "source_file": "audio_services/README.md",
+   "source_location": null,
+   "weight": 1.0,
+   "source": "audio_services_readme_audit_pipeline",
+   "target": "audio_services_app_sessions_schedule_grace_finalize"
+  },
+  {
+   "relation": "references",
+   "confidence": "INFERRED",
+   "confidence_score": 0.75,
+   "source_file": "audio_services/README.md",
+   "source_location": null,
+   "weight": 1.0,
+   "source": "audio_services_readme_audit_pipeline",
+   "target": "audio_services_app_sessions_finalize_all_active"
+  },
+  {
+   "relation": "references",
+   "confidence": "INFERRED",
+   "confidence_score": 0.75,
+   "source_file": "audio_services/docs/ARCHITECTURE.md",
+   "source_location": null,
+   "weight": 1.0,
+   "source": "audio_services_docs_architecture_prompt_as_code_auditor",
+   "target": "audio_services_audio_audit_transcript_app_ai_service_build_system_prompt"
+  },
+  {
+   "relation": "references",
+   "confidence": "INFERRED",
+   "confidence_score": 0.75,
+   "source_file": "audio_services/README.md",
+   "source_location": null,
+   "weight": 1.0,
+   "source": "audio_services_readme_audit_pipeline",
+   "target": "audio_services_audio_audit_transcript_app_routes_analyze"
+  },
+  {
+   "relation": "references",
+   "confidence": "INFERRED",
+   "confidence_score": 0.75,
+   "source_file": "audio_services/docs/ARCHITECTURE.md",
+   "source_location": null,
+   "weight": 1.0,
+   "source": "audio_services_docs_architecture_enhancement_service_split",
+   "target": "audio_services_audio_processor_app_processor_run_ffmpeg"
+  },
+  {
+   "relation": "references",
+   "confidence": "INFERRED",
+   "confidence_score": 0.75,
+   "source_file": "audio_services/README.md",
+   "source_location": null,
+   "weight": 1.0,
+   "source": "audio_services_readme_audio_processor_service",
+   "target": "audio_services_audio_processor_app_processor_run_ffmpeg"
+  },
+  {
+   "relation": "references",
+   "confidence": "INFERRED",
+   "confidence_score": 0.75,
+   "source_file": "audio_services/docs/ARCHITECTURE.md",
+   "source_location": null,
+   "weight": 1.0,
+   "source": "audio_services_docs_architecture_enhancement_service_split",
+   "target": "audio_services_audio_processor_app_processor_run_ffmpeg_to"
+  },
+  {
+   "relation": "references",
+   "confidence": "INFERRED",
+   "confidence_score": 0.75,
+   "source_file": "audio_services/README.md",
+   "source_location": null,
+   "weight": 1.0,
+   "source": "audio_services_readme_audio_processor_service",
+   "target": "audio_services_audio_processor_app_processor_run_ffmpeg_to"
+  },
+  {
+   "relation": "references",
+   "confidence": "INFERRED",
+   "confidence_score": 0.75,
+   "source_file": "audio_services/docs/ARCHITECTURE.md",
+   "source_location": null,
+   "weight": 1.0,
+   "source": "audio_services_docs_architecture_prompt_as_code_auditor",
+   "target": "audio_services_conversation_intelligence_app_pipelines_ai_analysis_build_system_prompt"
+  },
+  {
+   "relation": "references",
+   "confidence": "INFERRED",
+   "confidence_score": 0.75,
+   "source_file": "audio_services/docs/DATA_MODEL.md",
+   "source_location": null,
+   "weight": 1.0,
+   "source": "audio_services_docs_data_model_conversation_recordings",
+   "target": "audio_services_conversation_intelligence_app_pipelines_transcript_cleanup_repair_json"
+  },
+  {
+   "relation": "references",
+   "confidence": "INFERRED",
+   "confidence_score": 0.75,
+   "source_file": "audio_services/README.md",
+   "source_location": null,
+   "weight": 1.0,
+   "source": "audio_services_readme_audio_audit_transcript_service",
+   "target": "audio_services_conversation_intelligence_app_pipelines_transcription"
+  },
+  {
+   "relation": "references",
+   "confidence": "INFERRED",
+   "confidence_score": 0.75,
+   "source_file": "audio_services/README.md",
+   "source_location": null,
+   "weight": 1.0,
+   "source": "audio_services_readme_deepgram",
+   "target": "audio_services_conversation_intelligence_app_pipelines_transcription"
+  },
+  {
+   "relation": "references",
+   "confidence": "INFERRED",
+   "confidence_score": 0.75,
+   "source_file": "audio_services/README.md",
+   "source_location": null,
+   "weight": 1.0,
+   "source": "audio_services_readme_audio_audit_transcript_service",
+   "target": "audio_services_conversation_intelligence_app_pipelines_transcription_transcribe_audio"
+  },
+  {
+   "relation": "references",
+   "confidence": "INFERRED",
+   "confidence_score": 0.75,
+   "source_file": "audio_services/README.md",
+   "source_location": null,
+   "weight": 1.0,
+   "source": "audio_services_readme_deepgram",
+   "target": "audio_services_conversation_intelligence_app_pipelines_transcription_transcribe_audio"
+  },
+  {
+   "relation": "references",
+   "confidence": "INFERRED",
+   "confidence_score": 0.75,
+   "source_file": "audio_services/README.md",
+   "source_location": null,
+   "weight": 1.0,
+   "source": "audio_services_readme_conversation_intelligence_service",
+   "target": "audio_services_conversation_intelligence_db_init_001_pgvector"
+  },
+  {
+   "relation": "references",
+   "confidence": "INFERRED",
+   "confidence_score": 0.75,
+   "source_file": "audio_services/k_trans_pipe-main/README.md",
+   "source_location": null,
+   "weight": 1.0,
+   "source": "audio_services_k_trans_pipe_main_readme_silero_vad",
+   "target": "audio_services_k_trans_pipe_main_app_core_vad_silerovad_in_speech"
+  },
+  {
+   "relation": "references",
+   "confidence": "INFERRED",
+   "confidence_score": 0.75,
+   "source_file": "audio_services/k_trans_pipe-main/README.md",
+   "source_location": null,
+   "weight": 1.0,
+   "source": "audio_services_k_trans_pipe_main_readme_translation_pipeline",
+   "target": "audio_services_k_trans_pipe_main_pyproject_toml_pkg_translation_pipeline"
+  },
+  {
+   "relation": "references",
+   "confidence": "INFERRED",
+   "confidence_score": 0.75,
+   "source_file": "audio_services/k_trans_pipe-main/README.md",
+   "source_location": null,
+   "weight": 1.0,
+   "source": "audio_services_k_trans_pipe_main_readme_silero_vad",
+   "target": "audio_services_k_trans_pipe_main_scripts_download_models_download_silero_vad"
+  },
+  {
+   "relation": "references",
+   "confidence": "INFERRED",
+   "confidence_score": 0.75,
+   "source_file": "audio_services/k_trans_pipe-main/README.md",
+   "source_location": null,
+   "weight": 1.0,
+   "source": "audio_services_k_trans_pipe_main_readme_translation_pipeline",
+   "target": "audio_services_k_trans_pipe_main_scripts_download_models_download_silero_vad"
+  },
+  {
+   "relation": "references",
+   "confidence": "INFERRED",
+   "confidence_score": 0.75,
+   "source_file": "audio_services/docs/ARCHITECTURE.md",
+   "source_location": null,
+   "weight": 1.0,
+   "source": "audio_services_docs_architecture_prompt_as_code_auditor",
+   "target": "audio_services_scripts_reanalyze_failed_audits_prompt_date"
+  },
+  {
+   "relation": "references",
+   "confidence": "INFERRED",
+   "confidence_score": 0.75,
+   "source_file": "audio_services/k_trans_pipe-main/README.md",
+   "source_location": null,
+   "weight": 1.0,
+   "source": "audio_services_k_trans_pipe_main_readme_silero_vad",
+   "target": "audio_services_stt_tts_using_api_only_app_core_vad_silerovad_in_speech"
+  },
+  {
+   "relation": "references",
+   "confidence": "INFERRED",
+   "confidence_score": 0.75,
+   "source_file": "audio_services/k_trans_pipe-main/README.md",
+   "source_location": null,
+   "weight": 1.0,
+   "source": "audio_services_k_trans_pipe_main_readme_translation_pipeline",
+   "target": "audio_services_stt_tts_using_api_only_pyproject_toml_pkg_translation_pipeline"
+  },
+  {
+   "relation": "references",
+   "confidence": "INFERRED",
+   "confidence_score": 0.75,
+   "source_file": "audio_services/k_trans_pipe-main/README.md",
+   "source_location": null,
+   "weight": 1.0,
+   "source": "audio_services_k_trans_pipe_main_readme_silero_vad",
+   "target": "audio_services_stt_tts_using_api_only_scripts_download_models_download_silero_vad"
+  },
+  {
+   "relation": "references",
+   "confidence": "INFERRED",
+   "confidence_score": 0.75,
+   "source_file": "audio_services/k_trans_pipe-main/README.md",
+   "source_location": null,
+   "weight": 1.0,
+   "source": "audio_services_k_trans_pipe_main_readme_translation_pipeline",
+   "target": "audio_services_stt_tts_using_api_only_scripts_download_models_download_silero_vad"
+  },
+  {
+   "relation": "references",
+   "confidence": "INFERRED",
+   "confidence_score": 0.75,
+   "source_file": "kiotel-pms/docs/ARCHITECTURE.md",
+   "source_location": null,
+   "weight": 1.0,
+   "source": "kiotel_pms_docs_architecture_property_scoped_multitenancy",
+   "target": "kiotel_pms_core_backend_src_db_migrations_20260513000010_create_customer_properties"
+  },
+  {
+   "relation": "references",
+   "confidence": "INFERRED",
+   "confidence_score": 0.75,
+   "source_file": "kiotel-pms/README.md",
+   "source_location": null,
+   "weight": 1.0,
+   "source": "kiotel_pms_readme_hotel_onboarding",
+   "target": "kiotel_pms_core_backend_src_db_migrations_20260513000010_create_customer_properties"
+  },
+  {
+   "relation": "references",
+   "confidence": "INFERRED",
+   "confidence_score": 0.75,
+   "source_file": "kiotel-pms/docs/ARCHITECTURE.md",
+   "source_location": null,
+   "weight": 1.0,
+   "source": "kiotel_pms_docs_architecture_property_scoped_multitenancy",
+   "target": "kiotel_pms_core_backend_src_db_migrations_20260513000010_create_customer_properties_up"
+  },
+  {
+   "relation": "references",
+   "confidence": "INFERRED",
+   "confidence_score": 0.75,
+   "source_file": "kiotel-pms/README.md",
+   "source_location": null,
+   "weight": 1.0,
+   "source": "kiotel_pms_readme_hotel_onboarding",
+   "target": "kiotel_pms_core_backend_src_db_migrations_20260513000010_create_customer_properties_up"
+  },
+  {
+   "relation": "references",
+   "confidence": "INFERRED",
+   "confidence_score": 0.75,
+   "source_file": "kiotel-pms/docs/ARCHITECTURE.md",
+   "source_location": null,
+   "weight": 1.0,
+   "source": "kiotel_pms_docs_architecture_property_scoped_multitenancy",
+   "target": "kiotel_pms_core_backend_src_db_migrations_20260513000010_create_customer_properties_down"
+  },
+  {
+   "relation": "references",
+   "confidence": "INFERRED",
+   "confidence_score": 0.75,
+   "source_file": "kiotel-pms/README.md",
+   "source_location": null,
+   "weight": 1.0,
+   "source": "kiotel_pms_readme_hotel_onboarding",
+   "target": "kiotel_pms_core_backend_src_db_migrations_20260513000010_create_customer_properties_down"
+  },
+  {
+   "relation": "references",
+   "confidence": "INFERRED",
+   "confidence_score": 0.75,
+   "source_file": "kiotel-pms/core/backend/src/db/schema.md",
+   "source_location": null,
+   "weight": 1.0,
+   "source": "kiotel_pms_core_backend_src_db_schema_properties_room_types",
+   "target": "kiotel_pms_core_backend_src_db_migrations_20260513000020_create_properties_room_types"
+  },
+  {
+   "relation": "references",
+   "confidence": "INFERRED",
+   "confidence_score": 0.75,
+   "source_file": "kiotel-pms/core/backend/src/db/schema.md",
+   "source_location": null,
+   "weight": 1.0,
+   "source": "kiotel_pms_core_backend_src_db_schema_properties_room_types",
+   "target": "kiotel_pms_core_backend_src_db_migrations_20260513000020_create_properties_room_types_up"
+  },
+  {
+   "relation": "references",
+   "confidence": "INFERRED",
+   "confidence_score": 0.75,
+   "source_file": "kiotel-pms/core/backend/src/db/schema.md",
+   "source_location": null,
+   "weight": 1.0,
+   "source": "kiotel_pms_core_backend_src_db_schema_properties_room_types",
+   "target": "kiotel_pms_core_backend_src_db_migrations_20260513000020_create_properties_room_types_down"
+  },
+  {
+   "relation": "references",
+   "confidence": "INFERRED",
+   "confidence_score": 0.75,
+   "source_file": "kiotel-pms/core/backend/src/db/schema.md",
+   "source_location": null,
+   "weight": 1.0,
+   "source": "kiotel_pms_core_backend_src_db_schema_set_room_type_inventory",
+   "target": "kiotel_pms_core_backend_src_db_migrations_20260513000025_create_room_type_inventory_trigger"
+  },
+  {
+   "relation": "references",
+   "confidence": "INFERRED",
+   "confidence_score": 0.75,
+   "source_file": "kiotel-pms/core/backend/src/db/schema.md",
+   "source_location": null,
+   "weight": 1.0,
+   "source": "kiotel_pms_core_backend_src_db_schema_set_room_type_inventory",
+   "target": "kiotel_pms_core_backend_src_db_migrations_20260513000025_create_room_type_inventory_trigger_up"
+  },
+  {
+   "relation": "references",
+   "confidence": "INFERRED",
+   "confidence_score": 0.75,
+   "source_file": "kiotel-pms/core/backend/src/db/schema.md",
+   "source_location": null,
+   "weight": 1.0,
+   "source": "kiotel_pms_core_backend_src_db_schema_set_room_type_inventory",
+   "target": "kiotel_pms_core_backend_src_db_migrations_20260513000025_create_room_type_inventory_trigger_down"
+  },
+  {
+   "relation": "references",
+   "confidence": "INFERRED",
+   "confidence_score": 0.75,
+   "source_file": "kiotel-pms/core/backend/src/db/schema.md",
+   "source_location": null,
+   "weight": 1.0,
+   "source": "kiotel_pms_core_backend_src_db_schema_properties_rate_plans",
+   "target": "kiotel_pms_core_backend_src_db_migrations_20260513000030_create_properties_rate_plans"
+  },
+  {
+   "relation": "references",
+   "confidence": "INFERRED",
+   "confidence_score": 0.75,
+   "source_file": "kiotel-pms/core/backend/src/db/schema.md",
+   "source_location": null,
+   "weight": 1.0,
+   "source": "kiotel_pms_core_backend_src_db_schema_properties_rate_plans",
+   "target": "kiotel_pms_core_backend_src_db_migrations_20260513000030_create_properties_rate_plans_up"
+  },
+  {
+   "relation": "references",
+   "confidence": "INFERRED",
+   "confidence_score": 0.75,
+   "source_file": "kiotel-pms/core/backend/src/db/schema.md",
+   "source_location": null,
+   "weight": 1.0,
+   "source": "kiotel_pms_core_backend_src_db_schema_properties_rate_plans",
+   "target": "kiotel_pms_core_backend_src_db_migrations_20260513000030_create_properties_rate_plans_down"
+  },
+  {
+   "relation": "references",
+   "confidence": "INFERRED",
+   "confidence_score": 0.75,
+   "source_file": "kiotel-pms/core/backend/src/db/schema.md",
+   "source_location": null,
+   "weight": 1.0,
+   "source": "kiotel_pms_core_backend_src_db_schema_rate_plan_pricing",
+   "target": "kiotel_pms_core_backend_src_db_migrations_20260513000031_create_rate_plan_pricing"
+  },
+  {
+   "relation": "references",
+   "confidence": "INFERRED",
+   "confidence_score": 0.75,
+   "source_file": "kiotel-pms/core/backend/src/db/schema.md",
+   "source_location": null,
+   "weight": 1.0,
+   "source": "kiotel_pms_core_backend_src_db_schema_rate_plan_pricing",
+   "target": "kiotel_pms_core_backend_src_db_migrations_20260513000031_create_rate_plan_pricing_up"
+  },
+  {
+   "relation": "references",
+   "confidence": "INFERRED",
+   "confidence_score": 0.75,
+   "source_file": "kiotel-pms/core/backend/src/db/schema.md",
+   "source_location": null,
+   "weight": 1.0,
+   "source": "kiotel_pms_core_backend_src_db_schema_rate_plan_pricing",
+   "target": "kiotel_pms_core_backend_src_db_migrations_20260513000031_create_rate_plan_pricing_down"
+  },
+  {
+   "relation": "references",
+   "confidence": "INFERRED",
+   "confidence_score": 0.75,
+   "source_file": "kiotel-pms/core/backend/src/db/schema.md",
+   "source_location": null,
+   "weight": 1.0,
+   "source": "kiotel_pms_core_backend_src_db_schema_properties_taxes",
+   "target": "kiotel_pms_core_backend_src_db_migrations_20260513000040_create_properties_taxes"
+  },
+  {
+   "relation": "references",
+   "confidence": "INFERRED",
+   "confidence_score": 0.75,
+   "source_file": "kiotel-pms/core/backend/src/db/schema.md",
+   "source_location": null,
+   "weight": 1.0,
+   "source": "kiotel_pms_core_backend_src_db_schema_properties_taxes",
+   "target": "kiotel_pms_core_backend_src_db_migrations_20260513000040_create_properties_taxes_up"
+  },
+  {
+   "relation": "references",
+   "confidence": "INFERRED",
+   "confidence_score": 0.75,
+   "source_file": "kiotel-pms/core/backend/src/db/schema.md",
+   "source_location": null,
+   "weight": 1.0,
+   "source": "kiotel_pms_core_backend_src_db_schema_properties_taxes",
+   "target": "kiotel_pms_core_backend_src_db_migrations_20260513000040_create_properties_taxes_down"
+  },
+  {
+   "relation": "references",
+   "confidence": "INFERRED",
+   "confidence_score": 0.75,
+   "source_file": "kiotel-pms/core/backend/src/db/schema.md",
+   "source_location": null,
+   "weight": 1.0,
+   "source": "kiotel_pms_core_backend_src_db_schema_properties_addons",
+   "target": "kiotel_pms_core_backend_src_db_migrations_20260513000050_create_properties_addons"
+  },
+  {
+   "relation": "references",
+   "confidence": "INFERRED",
+   "confidence_score": 0.75,
+   "source_file": "kiotel-pms/core/backend/src/db/schema.md",
+   "source_location": null,
+   "weight": 1.0,
+   "source": "kiotel_pms_core_backend_src_db_schema_properties_addons",
+   "target": "kiotel_pms_core_backend_src_db_migrations_20260513000050_create_properties_addons_up"
+  },
+  {
+   "relation": "references",
+   "confidence": "INFERRED",
+   "confidence_score": 0.75,
+   "source_file": "kiotel-pms/core/backend/src/db/schema.md",
+   "source_location": null,
+   "weight": 1.0,
+   "source": "kiotel_pms_core_backend_src_db_schema_properties_addons",
+   "target": "kiotel_pms_core_backend_src_db_migrations_20260513000050_create_properties_addons_down"
+  },
+  {
+   "relation": "references",
+   "confidence": "INFERRED",
+   "confidence_score": 0.75,
+   "source_file": "kiotel-pms/core/backend/src/db/schema.md",
+   "source_location": null,
+   "weight": 1.0,
+   "source": "kiotel_pms_core_backend_src_db_schema_reservations",
+   "target": "kiotel_pms_core_backend_src_db_migrations_20260624000001_reservation_actor_attribution"
+  },
+  {
+   "relation": "references",
+   "confidence": "INFERRED",
+   "confidence_score": 0.75,
+   "source_file": "kiotel-pms/core/backend/src/db/schema.md",
+   "source_location": null,
+   "weight": 1.0,
+   "source": "kiotel_pms_core_backend_src_db_schema_reservations",
+   "target": "kiotel_pms_core_backend_src_db_migrations_20260624000001_reservation_actor_attribution_up"
+  },
+  {
+   "relation": "references",
+   "confidence": "INFERRED",
+   "confidence_score": 0.75,
+   "source_file": "kiotel-pms/core/backend/src/db/schema.md",
+   "source_location": null,
+   "weight": 1.0,
+   "source": "kiotel_pms_core_backend_src_db_schema_reservations",
+   "target": "kiotel_pms_core_backend_src_db_migrations_20260624000001_reservation_actor_attribution_down"
+  },
+  {
+   "relation": "references",
+   "confidence": "INFERRED",
+   "confidence_score": 0.75,
+   "source_file": "kiotel-pms/docs/ARCHITECTURE.md",
+   "source_location": null,
+   "weight": 1.0,
+   "source": "kiotel_pms_docs_architecture_reservation_lifecycle",
+   "target": "kiotel_pms_core_backend_src_lib_property_enums_lifecycle_status"
+  },
+  {
+   "relation": "references",
+   "confidence": "INFERRED",
+   "confidence_score": 0.75,
+   "source_file": "kiotel-pms/core/backend/src/db/schema.md",
+   "source_location": null,
+   "weight": 1.0,
+   "source": "kiotel_pms_core_backend_src_db_schema_properties_room_types",
+   "target": "kiotel_pms_core_backend_src_services_dashboard_service_occupancy_statuses"
+  },
+  {
+   "relation": "references",
+   "confidence": "INFERRED",
+   "confidence_score": 0.75,
+   "source_file": "kiotel-pms/core/backend/src/db/schema.md",
+   "source_location": null,
+   "weight": 1.0,
+   "source": "kiotel_pms_core_backend_src_db_schema_properties_taxes",
+   "target": "kiotel_pms_core_frontend_components_drawers_taxdrawer_tax_types"
+  },
+  {
+   "relation": "references",
+   "confidence": "INFERRED",
+   "confidence_score": 0.75,
+   "source_file": "kiotel_hardware/docs/INTEGRATIONS.md",
+   "source_location": null,
+   "weight": 1.0,
+   "source": "kiotel_hardware_docs_integrations_socketio_device_link",
+   "target": "kiotel_hardware_kiosk_source_kiosk_frmmainscreen_kiosk_frmmainscreen_connect2server"
+  },
+  {
+   "relation": "references",
+   "confidence": "INFERRED",
+   "confidence_score": 0.75,
+   "source_file": "kiotel_hardware/docs/ARCHITECTURE.md",
+   "source_location": null,
+   "weight": 1.0,
+   "source": "kiotel_hardware_docs_architecture_processcommand_dispatcher",
+   "target": "kiotel_hardware_kiosk_source_kiosk_frmmainscreen_kiosk_frmmainscreen_processcommand"
+  },
+  {
+   "relation": "references",
+   "confidence": "INFERRED",
+   "confidence_score": 0.75,
+   "source_file": "kiotel_hardware/kiosk_Source/kiosk/python_source/alert_system/README.md",
+   "source_location": null,
+   "weight": 1.0,
+   "source": "kiotel_hardware_kiosk_source_kiosk_python_source_alert_system_readme_detection_pipeline",
+   "target": "kiotel_hardware_kiosk_source_kiosk_python_source_alert_system_detector_detector_detection"
+  },
+  {
+   "relation": "references",
+   "confidence": "INFERRED",
+   "confidence_score": 0.75,
+   "source_file": "kiotel_hardware/kiosk_Source/kiosk/python_source/alert_system/README.md",
+   "source_location": null,
+   "weight": 1.0,
+   "source": "kiotel_hardware_kiosk_source_kiosk_python_source_alert_system_readme_detection_pipeline",
+   "target": "kiotel_hardware_kiosk_source_kiosk_python_source_alert_system_detector_detector_detection_to_dict"
+  },
+  {
+   "relation": "references",
+   "confidence": "INFERRED",
+   "confidence_score": 0.75,
+   "source_file": "kiotel_hardware/docs/ARCHITECTURE.md",
+   "source_location": null,
+   "weight": 1.0,
+   "source": "kiotel_hardware_docs_architecture_embedded_python_sidecars",
+   "target": "kiotel_hardware_kiosk_source_kiosk_python_source_alert_system_main_py_fastapi"
+  },
+  {
+   "relation": "references",
+   "confidence": "INFERRED",
+   "confidence_score": 0.75,
+   "source_file": "audio_services/docs/SYSTEM.md",
+   "source_location": null,
+   "weight": 1.0,
+   "source": "audio_services_docs_system_kiotel_web",
+   "target": "kiotel_hardware_kiosk_source_package_dependencies_socket_io_client"
+  },
+  {
+   "relation": "references",
+   "confidence": "INFERRED",
+   "confidence_score": 0.75,
+   "source_file": "kiotel_hardware/docs/INTEGRATIONS.md",
+   "source_location": null,
+   "weight": 1.0,
+   "source": "kiotel_hardware_docs_integrations_socketio_device_link",
+   "target": "kiotel_hardware_kiosk_source_package_dependencies_socket_io_client"
+  },
+  {
+   "relation": "references",
+   "confidence": "INFERRED",
+   "confidence_score": 0.75,
+   "source_file": "audio_services/docs/SYSTEM.md",
+   "source_location": null,
+   "weight": 1.0,
+   "source": "audio_services_docs_system_kiotel_web",
+   "target": "kiotel_web_core_backend_package_dependencies_socket_io_redis_adapter"
+  },
+  {
+   "relation": "references",
+   "confidence": "INFERRED",
+   "confidence_score": 0.75,
+   "source_file": "kiotel_hardware/docs/INTEGRATIONS.md",
+   "source_location": null,
+   "weight": 1.0,
+   "source": "kiotel_hardware_docs_integrations_socketio_device_link",
+   "target": "kiotel_web_core_backend_package_dependencies_socket_io_redis_adapter"
+  },
+  {
+   "relation": "references",
+   "confidence": "INFERRED",
+   "confidence_score": 0.75,
+   "source_file": "audio_services/docs/SYSTEM.md",
+   "source_location": null,
+   "weight": 1.0,
+   "source": "audio_services_docs_system_kiotel_web",
+   "target": "kiotel_web_core_backend_package_dependencies_socket_io"
+  },
+  {
+   "relation": "references",
+   "confidence": "INFERRED",
+   "confidence_score": 0.75,
+   "source_file": "kiotel_hardware/docs/INTEGRATIONS.md",
+   "source_location": null,
+   "weight": 1.0,
+   "source": "kiotel_hardware_docs_integrations_socketio_device_link",
+   "target": "kiotel_web_core_backend_package_dependencies_socket_io"
+  },
+  {
+   "relation": "references",
+   "confidence": "INFERRED",
+   "confidence_score": 0.75,
+   "source_file": "audio_services/docs/SYSTEM.md",
+   "source_location": null,
+   "weight": 1.0,
+   "source": "audio_services_docs_system_checkin_name_match",
+   "target": "kiotel_web_core_backend_src_db_migrations_20260502000000_id_scanjobs_add_name_match"
+  },
+  {
+   "relation": "references",
+   "confidence": "INFERRED",
+   "confidence_score": 0.75,
+   "source_file": "kiotel_hardware/docs/SYSTEM.md",
+   "source_location": null,
+   "weight": 1.0,
+   "source": "kiotel_hardware_docs_system_checkin_name_match",
+   "target": "kiotel_web_core_backend_src_db_migrations_20260502000000_id_scanjobs_add_name_match"
+  },
+  {
+   "relation": "references",
+   "confidence": "INFERRED",
+   "confidence_score": 0.75,
+   "source_file": "audio_services/docs/SYSTEM.md",
+   "source_location": null,
+   "weight": 1.0,
+   "source": "audio_services_docs_system_checkin_name_match",
+   "target": "kiotel_web_core_backend_src_db_migrations_20260502000000_id_scanjobs_add_name_match_up"
+  },
+  {
+   "relation": "references",
+   "confidence": "INFERRED",
+   "confidence_score": 0.75,
+   "source_file": "kiotel_hardware/docs/SYSTEM.md",
+   "source_location": null,
+   "weight": 1.0,
+   "source": "kiotel_hardware_docs_system_checkin_name_match",
+   "target": "kiotel_web_core_backend_src_db_migrations_20260502000000_id_scanjobs_add_name_match_up"
+  },
+  {
+   "relation": "references",
+   "confidence": "INFERRED",
+   "confidence_score": 0.75,
+   "source_file": "audio_services/docs/SYSTEM.md",
+   "source_location": null,
+   "weight": 1.0,
+   "source": "audio_services_docs_system_checkin_name_match",
+   "target": "kiotel_web_core_backend_src_db_migrations_20260502000000_id_scanjobs_add_name_match_down"
+  },
+  {
+   "relation": "references",
+   "confidence": "INFERRED",
+   "confidence_score": 0.75,
+   "source_file": "kiotel_hardware/docs/SYSTEM.md",
+   "source_location": null,
+   "weight": 1.0,
+   "source": "kiotel_hardware_docs_system_checkin_name_match",
+   "target": "kiotel_web_core_backend_src_db_migrations_20260502000000_id_scanjobs_add_name_match_down"
+  },
+  {
+   "relation": "references",
+   "confidence": "INFERRED",
+   "confidence_score": 0.75,
+   "source_file": "kiotel_hardware/docs/DEVICES.md",
+   "source_location": null,
+   "weight": 1.0,
+   "source": "kiotel_hardware_docs_devices_iioboard",
+   "target": "kiotel_web_core_backend_src_db_migrations_20260514000000_kiosk_options_default_ocr_indicator"
+  },
+  {
+   "relation": "references",
+   "confidence": "INFERRED",
+   "confidence_score": 0.75,
+   "source_file": "kiotel_hardware/docs/DEVICES.md",
+   "source_location": null,
+   "weight": 1.0,
+   "source": "kiotel_hardware_docs_devices_iioboard",
+   "target": "kiotel_web_core_backend_src_db_migrations_20260514000000_kiosk_options_default_ocr_indicator_up"
+  },
+  {
+   "relation": "references",
+   "confidence": "INFERRED",
+   "confidence_score": 0.75,
+   "source_file": "kiotel_hardware/docs/DEVICES.md",
+   "source_location": null,
+   "weight": 1.0,
+   "source": "kiotel_hardware_docs_devices_iioboard",
+   "target": "kiotel_web_core_backend_src_db_migrations_20260514000000_kiosk_options_default_ocr_indicator_down"
+  },
+  {
+   "relation": "references",
+   "confidence": "INFERRED",
+   "confidence_score": 0.75,
+   "source_file": "audio_services/README.md",
+   "source_location": null,
+   "weight": 1.0,
+   "source": "audio_services_readme_audio_services_overview",
+   "target": "kiotel_web_core_backend_src_db_migrations_20260610000001_create_session_ai_audit"
+  },
+  {
+   "relation": "references",
+   "confidence": "INFERRED",
+   "confidence_score": 0.75,
+   "source_file": "audio_services/README.md",
+   "source_location": null,
+   "weight": 1.0,
+   "source": "audio_services_readme_audio_services_overview",
+   "target": "kiotel_web_core_backend_src_db_migrations_20260610000001_create_session_ai_audit_up"
+  },
+  {
+   "relation": "references",
+   "confidence": "INFERRED",
+   "confidence_score": 0.75,
+   "source_file": "audio_services/README.md",
+   "source_location": null,
+   "weight": 1.0,
+   "source": "audio_services_readme_audio_services_overview",
+   "target": "kiotel_web_core_backend_src_db_migrations_20260610000001_create_session_ai_audit_down"
+  },
+  {
+   "relation": "references",
+   "confidence": "INFERRED",
+   "confidence_score": 0.75,
+   "source_file": "kiotel_hardware/docs/ARCHITECTURE.md",
+   "source_location": null,
+   "weight": 1.0,
+   "source": "kiotel_hardware_docs_architecture_actionless_avatar",
+   "target": "kiotel_web_core_backend_src_db_migrations_20260616000000_assignments_add_ai_avatar_display"
+  },
+  {
+   "relation": "references",
+   "confidence": "INFERRED",
+   "confidence_score": 0.75,
+   "source_file": "kiotel_hardware/docs/ARCHITECTURE.md",
+   "source_location": null,
+   "weight": 1.0,
+   "source": "kiotel_hardware_docs_architecture_actionless_avatar",
+   "target": "kiotel_web_core_backend_src_db_migrations_20260616000000_assignments_add_ai_avatar_display_up"
+  },
+  {
+   "relation": "references",
+   "confidence": "INFERRED",
+   "confidence_score": 0.75,
+   "source_file": "kiotel_hardware/docs/ARCHITECTURE.md",
+   "source_location": null,
+   "weight": 1.0,
+   "source": "kiotel_hardware_docs_architecture_actionless_avatar",
+   "target": "kiotel_web_core_backend_src_db_migrations_20260616000000_assignments_add_ai_avatar_display_down"
+  },
+  {
+   "relation": "references",
+   "confidence": "INFERRED",
+   "confidence_score": 0.75,
+   "source_file": "kiotel_web/core/docker-compose.yml",
+   "source_location": null,
+   "weight": 1.0,
+   "source": "kiotel_web_core_docker_compose_redis",
+   "target": "kiotel_web_core_backend_src_lib_redis_redis"
+  },
+  {
+   "relation": "references",
+   "confidence": "INFERRED",
+   "confidence_score": 0.75,
+   "source_file": "audio_services/docs/SYSTEM.md",
+   "source_location": null,
+   "weight": 1.0,
+   "source": "audio_services_docs_system_kiotel_web",
+   "target": "kiotel_web_core_frontend_package_dependencies_socket_io_client"
+  },
+  {
+   "relation": "references",
+   "confidence": "INFERRED",
+   "confidence_score": 0.75,
+   "source_file": "kiotel_hardware/docs/INTEGRATIONS.md",
+   "source_location": null,
+   "weight": 1.0,
+   "source": "kiotel_hardware_docs_integrations_socketio_device_link",
+   "target": "kiotel_web_core_frontend_package_dependencies_socket_io_client"
+  },
+  {
+   "relation": "references",
+   "confidence": "INFERRED",
+   "confidence_score": 0.75,
+   "source_file": "kiotel_hardware/docs/DEVICES.md",
+   "source_location": null,
+   "weight": 1.0,
+   "source": "kiotel_hardware_docs_devices_icashdispenser",
+   "target": "kiotel_web_core_frontend_src_components_dashboard_recycler_cashbox_panel"
+  },
+  {
+   "relation": "references",
+   "confidence": "INFERRED",
+   "confidence_score": 0.75,
+   "source_file": "kiotel_hardware/docs/DEVICES.md",
+   "source_location": null,
+   "weight": 1.0,
+   "source": "kiotel_hardware_docs_devices_icashdispenser",
+   "target": "kiotel_web_core_frontend_src_components_dashboard_recycler_cashbox_panel_recyclercashboxpanelprops"
+  },
+  {
+   "relation": "references",
+   "confidence": "INFERRED",
+   "confidence_score": 0.75,
+   "source_file": "kiotel_hardware/docs/DEVICES.md",
+   "source_location": null,
+   "weight": 1.0,
+   "source": "kiotel_hardware_docs_devices_icashdispenser",
+   "target": "kiotel_web_core_frontend_src_components_dashboard_recycler_cashbox_panel_recyclercashboxpanel"
+  },
+  {
+   "relation": "references",
+   "confidence": "INFERRED",
+   "confidence_score": 0.75,
+   "source_file": "audio_services/docs/INTEGRATIONS.md",
+   "source_location": null,
+   "weight": 1.0,
+   "source": "audio_services_docs_integrations_recording_control",
+   "target": "kiotel_web_core_id_classifier_main_require_internal_secret"
+  },
+  {
+   "relation": "references",
+   "confidence": "INFERRED",
+   "confidence_score": 0.75,
+   "source_file": "audio_services/docs/INTEGRATIONS.md",
+   "source_location": null,
+   "weight": 1.0,
+   "source": "audio_services_docs_integrations_shared_internal_secret",
+   "target": "kiotel_web_core_id_classifier_main_require_internal_secret"
+  },
+  {
+   "relation": "references",
+   "confidence": "INFERRED",
+   "confidence_score": 0.75,
+   "source_file": "audio_services/docs/INTEGRATIONS.md",
+   "source_location": null,
+   "weight": 1.0,
+   "source": "audio_services_docs_integrations_recording_control",
+   "target": "kiotel_web_core_ocr_service_main_require_internal_secret"
+  },
+  {
+   "relation": "references",
+   "confidence": "INFERRED",
+   "confidence_score": 0.75,
+   "source_file": "audio_services/docs/INTEGRATIONS.md",
+   "source_location": null,
+   "weight": 1.0,
+   "source": "audio_services_docs_integrations_shared_internal_secret",
+   "target": "kiotel_web_core_ocr_service_main_require_internal_secret"
+  },
+  {
+   "relation": "references",
+   "confidence": "EXTRACTED",
+   "source_file": "kiotel_hardware/kiosk_Source/kiosk/frmMainScreen.cs",
+   "source_location": "L464",
+   "weight": 1.0,
+   "_origin": null,
+   "source": "kiotel_hardware_kiosk_source_kiosk_frmmainscreen",
+   "target": "kiotel_web_core_backend_public_welcomepage_welcome_page",
+   "confidence_score": 1.0
+  }
+ ]
+}

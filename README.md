@@ -81,9 +81,11 @@ rm -rf graphify-out && mv build-root/graphify-out ./graphify-out
 docker build -t kiotel-graph-mcp .       # repackage the new graph
 ```
 
-`--update` re-extracts only changed files on subsequent runs. After a rebuild, re-apply the
-gap-repair pass (dangling internal imports + concept→code bridges — see RUNBOOK notes and
-the commit history) before publishing, and rebuild the Docker image.
+`--update` re-extracts only changed files on subsequent runs. After a rebuild, **always run
+`python scripts/apply-graph-repairs.py graphify-out/graph.json`** — it re-applies the
+curated gap repairs (internal-import remaps, the concept→code bridges from
+`scripts/bridges.json`, falsified-edge removals, verified upgrades; idempotent) — then
+rebuild the Docker image.
 
 ## Production
 

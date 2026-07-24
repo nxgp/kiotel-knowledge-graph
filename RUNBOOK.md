@@ -72,6 +72,7 @@ Either way, output lands in `build-root/graphify-out/`:
 
 ```bash
 rm -rf graphify-out && mv build-root/graphify-out ./graphify-out
+python scripts/apply-graph-repairs.py graphify-out/graph.json   # ALWAYS: re-apply curated repairs
 git add graphify-out README.md RUNBOOK.md scripts .graphifyignore mcp
 git commit -m "Kiotel combined knowledge graph"
 git push
