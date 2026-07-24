@@ -1,0 +1,67 @@
+# .graphifyignore — patterns (gitignore syntax) for the Kiotel combined graph build root.
+# Keeps Graphify focused on source + docs; excludes deps, build output, binaries, and
+# large generated/data files. (The build script also excludes most of these via rsync;
+# this is the second line of defence.)
+
+# --- version control / dependencies / build output ---
+.git/
+node_modules/
+dist/
+build/
+.next/
+out/
+obj/
+bin/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.venv/
+venv/
+
+# --- lockfiles & large generated files ---
+package-lock.json
+*-lock.json
+yarn.lock
+pnpm-lock.yaml
+*.min.js
+*.map
+
+# --- secrets (keep .env.example, drop real env) ---
+.env
+.env.local
+.env.*.local
+
+# --- binaries, models, media (esp. the hardware kiosk publish output) ---
+*.dll
+*.exe
+*.so
+*.dylib
+*.onnx
+*.pt
+*.pth
+*.bin
+*.dat
+*.data
+*.traineddata
+*.mp4
+*.mov
+*.wav
+*.mp3
+*.ico
+*.icns
+*.bmp
+*.jpg
+*.jpeg
+*.png
+*.webp
+*.gif
+*.pdf
+*.resx
+
+# --- large data dumps we don't want in the graph ---
+core/backend/src/db/backup/data.ts
+**/db/backup/data.ts
+
+# --- graph output itself ---
+graphify-out/
