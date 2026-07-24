@@ -6,7 +6,7 @@
 # Auth:   docker run -d -p 8080:8080 -e GRAPHIFY_API_KEY=<key> kiotel-graph-mcp
 FROM python:3.12-slim
 
-RUN pip install --no-cache-dir "graphifyy==0.9.25"
+RUN pip install --no-cache-dir "graphifyy[mcp]==0.9.25"
 
 WORKDIR /app
 COPY graphify-out/graph.json /app/graph.json
