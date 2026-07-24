@@ -63,6 +63,32 @@ Claude Code config for the HTTP endpoint:
 
 (If the server was started with `GRAPHIFY_API_KEY`, add `"headers": {"Authorization": "Bearer <key>"}`.)
 
+## Claude chat (claude.ai) — team-wide custom connector
+
+claude.ai talks to remote MCP servers directly; it needs a **public HTTPS** URL (the
+dockerized server itself speaks plain HTTP, so deploy behind TLS — DO App Platform does
+this automatically; see `.do/app.yaml`).
+
+Each teammate (Pro/Max), or an admin once for the whole workspace (Team/Enterprise):
+
+1. claude.ai → **Settings → Connectors → Add custom connector**
+2. Name: `Kiotel Graph` · URL: `https://<your-app>.ondigitalocean.app/mcp`
+3. Save. In a chat, enable it under the tools/search menu — then ask things like
+   *"what connects the kiosk to the platform?"*
+
+> **Auth caveat:** claude.ai custom connectors authenticate via OAuth or not at all — they
+> cannot send a static `Authorization` header, so a `GRAPHIFY_API_KEY`-protected server
+> won't work there. Deploying keyless means anyone with the URL can query the graph
+> (internal architecture info — treat the URL as sensitive). Keep the API key OFF for the
+> claude.ai deployment, or front it with an OAuth proxy later. Claude Code / Cursor DO
+> support the API key via headers:
+>
+> ```json
+> { "mcpServers": { "kiotel-graph": { "type": "http",
+>     "url": "https://<your-app>.ondigitalocean.app/mcp",
+>     "headers": { "Authorization": "Bearer <key>" } } } }
+> ```
+
 ## Cursor / Codex / other MCP clients
 
 Graphify ships assistant manifests via `graphify install`. For a generic MCP client, use the
