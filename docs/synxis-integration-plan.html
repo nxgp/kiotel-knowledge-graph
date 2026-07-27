@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SynXis × Kiotel — Automated Check-in Integration Plan</title>
+<style>
+  :root {
+    --bg: #f7f7f5; --panel: #ffffff; --ink: #1a1a1a; --muted: #6b6b6b;
+    --line: #d9d9d4; --accent: #0f6b5c; --accent-soft: #e3f0ed;
+    --ext: #fdeef2; --ext-line: #d98aa4;
+    --pms: #eef2fa; --pms-line: #9db3d8;
+    --plat: #fdf3e3; --plat-line: #d8b273;
+    --kiosk: #e9f4e7; --kiosk-line: #8fbb86;
+    --new: #0f6b5c;
+    --warn-bg: #fdeaea; --warn-line: #cc6b6b;
+    --code-bg: #f0f0ec;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #16181a; --panel: #1f2225; --ink: #e8e6e1; --muted: #9a9a94;
+      --line: #3a3d40; --accent: #5fc4ae; --accent-soft: #1d3833;
+      --ext: #3a2530; --ext-line: #a4607a;
+      --pms: #232c3b; --pms-line: #4d6491;
+      --plat: #37301f; --plat-line: #937b47;
+      --kiosk: #24301f; --kiosk-line: #5f7f57;
+      --new: #5fc4ae;
+      --warn-bg: #3a2424; --warn-line: #a05252;
+      --code-bg: #26292c;
+    }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink);
+    font: 16px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+  main { max-width: 980px; margin: 0 auto; padding: 40px 24px 80px; }
+  h1 { font-size: 1.8rem; margin: 0 0 6px; letter-spacing: -0.02em; }
+  h2 { font-size: 1.25rem; margin: 44px 0 12px; }
+  h3 { font-size: 1rem; margin: 22px 0 8px; }
+  p.lede { color: var(--muted); margin: 0 0 22px; max-width: 66ch; }
+  .pill { display: inline-block; background: var(--accent-soft); color: var(--accent);
+    border-radius: 20px; padding: 2px 12px; font-size: 0.78rem; font-weight: 600; margin-right: 6px; }
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 16px 20px; margin: 12px 0; }
+  table { width: 100%; border-collapse: collapse; background: var(--panel); border: 1px solid var(--line);
+    border-radius: 10px; overflow: hidden; font-size: 0.9rem; }
+  th, td { text-align: left; padding: 9px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { background: var(--code-bg); font-weight: 600; }
+  tr:last-child td { border-bottom: none; }
+  code { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-size: 0.86em;
+    background: var(--code-bg); border-radius: 4px; padding: 1px 5px; }
+  .warn { background: var(--warn-bg); border: 1px solid var(--warn-line); border-radius: 10px;
+    padding: 12px 16px; margin: 10px 0; font-size: 0.92rem; }
+  .diagram-wrap { overflow-x: auto; background: var(--panel); border: 1px solid var(--line);
+    border-radius: 12px; padding: 18px; }
+  svg { display: block; min-width: 860px; max-width: 100%; height: auto; margin: 0 auto; }
+  svg text { font: 13px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; fill: var(--ink); }
+  svg text.small { font-size: 11px; fill: var(--muted); }
+  svg text.new-tag { font-size: 10px; fill: var(--new); font-weight: 700; }
+  svg .ext   { fill: var(--ext);   stroke: var(--ext-line); }
+  svg .pms   { fill: var(--pms);   stroke: var(--pms-line); }
+  svg .plat  { fill: var(--plat);  stroke: var(--plat-line); }
+  svg .kiosk { fill: var(--kiosk); stroke: var(--kiosk-line); }
+  svg .newbox { stroke: var(--new); stroke-width: 2; stroke-dasharray: 6 3; fill: var(--accent-soft); }
+  svg .edge { stroke: var(--muted); stroke-width: 1.4; fill: none; marker-end: url(#arr2); }
+  svg .edge.new { stroke: var(--new); stroke-width: 2; }
+  ol.flow { counter-reset: step; list-style: none; padding: 0; }
+  ol.flow li { position: relative; padding: 10px 14px 10px 52px; background: var(--panel);
+    border: 1px solid var(--line); border-radius: 10px; margin-bottom: 8px; }
+  ol.flow li::before { counter-increment: step; content: counter(step);
+    position: absolute; left: 14px; top: 50%; transform: translateY(-50%);
+    width: 26px; height: 26px; border-radius: 50%; background: var(--accent); color: #fff;
+    font-weight: 700; font-size: 0.85rem; display: flex; align-items: center; justify-content: center; }
+  .grade { font-size: 1.05rem; font-weight: 700; color: var(--accent); }
+  .foot { color: var(--muted); font-size: 0.82rem; margin-top: 56px; border-top: 1px solid var(--line); padding-top: 16px; }
+</style>
+</head>
+<body>
+<main>
+  <h1>SynXis × Kiotel: automated check-in</h1>
+  <p class="lede">Integration plan for connecting the <b>SynXis (Aven Hospitality / Sabre) Central
+  Reservation System</b> into the Kiotel platform — so that when a guest walks up to the kiosk,
+  their booking is found and matched <em>automatically</em>, instead of an agent manually looking
+  it up in the PMS and typing the guest name into the session.</p>
+  <div>
+    <span class="pill">Difficulty: MODERATE — the code is ready for it</span>
+    <span class="pill">~6–8 eng weeks</span>
+    <span class="pill">Longest pole: Sabre/Aven onboarding</span>
+  </div>
+
+  <h2>Today's manual flow (what we're eliminating)</h2>
+  <div class="card">
+  <p>Verified from the codebase knowledge graph: <b>there is no shared guest/booking table between
+  the PMS and the platform.</b> The only runtime bridge is the <b>check-in-time name match</b> —
+  the kiosk OCRs the guest's ID, and the platform's <code>guest-name-matcher.ts</code> compares it
+  against <code>t_session_info.guest_name</code>, which is populated <em>per session by a human
+  agent</em> (or the pms-autofill browser extension) after manually finding the booking in the PMS.
+  Every check-in requires a person in the loop.</p>
+  </div>
+
+  <h2>What SynXis gives us</h2>
+  <table>
+    <tr><th>SynXis product</th><th>What it does</th><th>Role in this plan</th></tr>
+    <tr><td><b>Reservation Services</b> (REST)</td>
+        <td>Booking, modification, cancellation, <b>retrieval</b> orchestration — built for PMSs,
+            booking engines, call centers. Retrieve by confirmation number, or name + email/phone
+            for unauthenticated guests.</td>
+        <td>On-demand booking lookup at check-in time (fallback path + reconciliation)</td></tr>
+    <tr><td><b>CRS Reservation Delivery</b> (HTNG, SOAP v10.39)</td>
+        <td>Pushes every new/changed/cancelled reservation from the CRS to a PMS in near-real time.</td>
+        <td>Primary sync: keeps kiotel-pms's <code>reservations</code> table current so kiosk
+            lookups are local and fast</td></tr>
+    <tr><td><b>Data Warehouse Delivery — Reservations</b> (SOAP v10.39)</td>
+        <td>Near-real-time reservation feed.</td>
+        <td>Alternative bulk/backfill feed</td></tr>
+    <tr><td><b>Change Discovery</b> (SOAP v10.32)</td>
+        <td>Identifies rate/availability changes since a checkpoint.</td>
+        <td>Poll-based fallback if push delivery isn't certified initially</td></tr>
+    <tr><td><b>Guest Profiles</b> (SOAP v10.36)</td>
+        <td>Create/manage guest, company, booker profiles.</td>
+        <td>Phase-2+: enrich matching (loyalty, repeat guests)</td></tr>
+    <tr><td><b>Auth</b> (REST)</td>
+        <td><code>POST &lt;env&gt;/v1/auth/token</code>, Basic (double-Base64) → bearer,
+            <b>720-minute TTL</b>, CLIENT_CREDENTIALS.</td>
+        <td>One token manager shared by all SynXis calls</td></tr>
+  </table>
+  <div class="warn"><b>Onboarding reality:</b> SynXis APIs require a signed Aven Hospitality
+  customer/partner contract; credentials are issued by an account manager and integrations go
+  through certification. The catalog is 106 products (55 REST / 44 SOAP) — the reservation
+  <em>delivery</em> path is SOAP/HTNG, so budget for XML handling + certification. Start the
+  contract conversation <b>now</b>; it is the schedule's longest pole (typically weeks, not days).</div>
+
+  <h2>Where it plugs in — the code is already shaped for this</h2>
+  <p>Three facts from the knowledge graph make this a moderate integration, not a rebuild:</p>
+  <table>
+    <tr><th>Existing seam</th><th>Evidence</th><th>What we do</th></tr>
+    <tr><td>PMS anticipates channel/CRS integrations</td>
+        <td><code>CHANNEL_MANAGER_PROVIDERS</code> enum (<code>property-enums.ts:L30</code> —
+            siteminder, cloudbeds, …, <code>custom</code>), <code>BOOKING_SOURCES</code> includes
+            <code>channel_manager</code>, full reservation status lifecycle
+            (<code>confirmed → pre_checked_in → checked_in</code>) already modeled</td>
+        <td>Add <code>synxis</code> as a provider; new sync service writes into the existing
+            <code>reservations</code> model</td></tr>
+    <tr><td>Platform already has the match pipeline</td>
+        <td><code>guest-name-matcher.ts</code> + <code>id_scanjobs.name_match</code> (migration
+            20260502) + per-session <code>t_session_info.guest_name</code></td>
+        <td>Feed it automatically from a PMS lookup instead of an agent's keyboard</td></tr>
+    <tr><td>Cross-system auth patterns exist</td>
+        <td>Platform partner API (scoped <code>kio_</code> tokens, hashed, CIDR + device
+            allow-listed) and the <code>pms-autofill</code> external OAuth client</td>
+        <td>Mirror the same pattern for the new PMS → platform reservation-lookup endpoint</td></tr>
+  </table>
+
+  <h2>Target architecture</h2>
+  <div class="diagram-wrap">
+  <svg viewBox="0 0 900 540" xmlns="http://www.w3.org/2000/svg" role="img"
+       aria-label="SynXis CRS feeds a new sync service in kiotel-pms; the platform's name matcher queries a new PMS lookup API; the kiosk flow becomes automatic with agent fallback">
+    <defs>
+      <marker id="arr2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+        <path d="M0,0 L10,5 L0,10 z" fill="currentColor" opacity="0.65"/>
+      </marker>
+    </defs>
+
+    <rect class="ext" x="20" y="20" width="270" height="70" rx="10"/>
+    <text x="155" y="48" text-anchor="middle" font-weight="600">SynXis CRS (Aven / Sabre)</text>
+    <text x="155" y="68" text-anchor="middle" class="small">bookings from OTAs, brand.com, call center</text>
+
+    <path class="edge new" style="color:var(--new)" d="M155,90 L155,140"/>
+    <text x="168" y="112" class="new-tag">NEW · HTNG delivery push</text>
+    <text x="168" y="126" class="new-tag">(+ REST retrieve fallback)</text>
+
+    <rect class="pms" x="20" y="142" width="270" height="150" rx="10"/>
+    <text x="155" y="166" text-anchor="middle" font-weight="600">kiotel-pms backend</text>
+    <rect class="newbox" x="38" y="180" width="234" height="46" rx="8"/>
+    <text x="155" y="199" text-anchor="middle">synxis-sync service</text>
+    <text x="155" y="215" text-anchor="middle" class="small">token mgr · ingest · map → reservations</text>
+    <text x="155" y="248" text-anchor="middle" class="small">reservations table (lifecycle:</text>
+    <text x="155" y="264" text-anchor="middle" class="small">confirmed → pre_checked_in → checked_in)</text>
+
+    <path class="edge new" style="color:var(--new)" d="M290,217 L400,217"/>
+    <text x="300" y="207" class="new-tag">NEW · scoped lookup API</text>
+    <text x="300" y="232" class="small">GET /partner/reservations?name&amp;date</text>
+
+    <rect class="plat" x="402" y="142" width="290" height="150" rx="10"/>
+    <text x="547" y="166" text-anchor="middle" font-weight="600">kiotel_web platform</text>
+    <rect class="newbox" x="420" y="180" width="254" height="46" rx="8"/>
+    <text x="547" y="199" text-anchor="middle">auto-match in guest-name-matcher</text>
+    <text x="547" y="215" text-anchor="middle" class="small">OCR name → PMS lookup → session populated</text>
+    <text x="547" y="248" text-anchor="middle" class="small">t_session_info.guest_name · id_scanjobs.name_match</text>
+    <text x="547" y="264" text-anchor="middle" class="small">agent escalation stays as fallback</text>
+
+    <path class="edge" style="color:var(--muted)" d="M547,292 L547,340"/>
+    <text x="560" y="320" class="small">WebView UI + WebSocket</text>
+
+    <rect class="kiosk" x="402" y="342" width="290" height="70" rx="10"/>
+    <text x="547" y="368" text-anchor="middle" font-weight="600">Lobby kiosk (kiotel_hardware)</text>
+    <text x="547" y="388" text-anchor="middle" class="small">ID scan → OCR → match → pay → key — no code changes</text>
+
+    <path class="edge new" style="color:var(--new)" d="M290,262 Q360,300 402,262" opacity="0"/>
+    <path class="edge new" style="color:var(--new)" d="M470,292 Q420,320 290,268"/>
+    <text x="310" y="300" class="new-tag">NEW · check-in write-back</text>
+    <text x="310" y="314" class="small">kiosk done → reservation → checked_in</text>
+
+    <rect class="ext" x="730" y="142" width="150" height="150" rx="10"/>
+    <text x="805" y="170" text-anchor="middle" font-weight="600">Agent console</text>
+    <text x="805" y="192" text-anchor="middle" class="small">RELAY commands,</text>
+    <text x="805" y="208" text-anchor="middle" class="small">video escalation</text>
+    <text x="805" y="238" text-anchor="middle" class="small">from: every check-in</text>
+    <text x="805" y="254" text-anchor="middle" class="small">to: exceptions only</text>
+    <path class="edge" style="color:var(--muted)" d="M730,217 L694,217"/>
+  </svg>
+  </div>
+
+  <h2>The automated flow</h2>
+  <ol class="flow">
+    <li><b>Sync (continuous):</b> SynXis pushes every reservation create/modify/cancel via CRS
+        Reservation Delivery → <code>synxis-sync</code> maps it into the PMS
+        <code>reservations</code> table (new columns: <code>crs_confirmation_number</code>,
+        <code>crs_source</code>; <code>booking_source = channel_manager</code>). Nightly REST
+        Retrieve sweep reconciles misses.</li>
+    <li><b>Guest arrives:</b> kiosk detects approach, scans ID, OCR extracts the name — exactly
+        today's pipeline, unchanged.</li>
+    <li><b>Auto-match:</b> the platform's matcher calls the new PMS lookup API with (name,
+        today's date ± window). One confident hit → session auto-populated, reservation →
+        <code>pre_checked_in</code>. Ambiguous or zero hits → kiosk asks for confirmation number
+        / last 4 of phone → retry → only then escalate to an agent.</li>
+    <li><b>Check-in completes:</b> payment + key dispensed → platform notifies PMS →
+        reservation → <code>checked_in</code>, folio opens. (Later phase: propagate status back
+        to SynXis via Modify Reservation.)</li>
+    <li><b>Audit + metrics:</b> every auto-match decision logged to <code>session_events</code>;
+        auto-match rate, fallback rate, and time-to-check-in appear on the ops dashboard.</li>
+  </ol>
+
+  <h2>Phased plan &amp; effort</h2>
+  <table>
+    <tr><th>Phase</th><th>Work</th><th>Where</th><th>Est.</th></tr>
+    <tr><td><b>0 · Access</b></td>
+        <td>Aven/Sabre contract, API order, CERT-environment credentials, property codes,
+            certification scheduling. <b>Start immediately — gates everything.</b></td>
+        <td>Business</td><td>2–6 wks lead (parallel)</td></tr>
+    <tr><td><b>1 · Sync</b></td>
+        <td><code>synxis-sync</code> service: token manager (720-min TTL), HTNG delivery
+            endpoint (or Change-Discovery polling to start), reservation mapper, migration for
+            CRS columns, <code>synxis</code> in <code>CHANNEL_MANAGER_PROVIDERS</code>,
+            idempotent upserts, dead-letter queue.</td>
+        <td>kiotel-pms backend</td><td>2–3 wks</td></tr>
+    <tr><td><b>2 · Lookup API</b></td>
+        <td>Scoped reservation-lookup endpoint for the platform (mirror the <code>kio_</code>
+            token pattern: hashed keys, CIDR allow-list, per-property scope, rate limit).</td>
+        <td>kiotel-pms backend</td><td>1 wk</td></tr>
+    <tr><td><b>3 · Auto-match</b></td>
+        <td>Extend <code>guest-name-matcher.ts</code>: PMS lookup call, confidence scoring
+            (exact/fuzzy name + date window), session auto-population, disambiguation prompts in
+            the kiosk WebView UI, agent fallback unchanged, <code>session_events</code> audit.</td>
+        <td>kiotel_web backend + WebView UI</td><td>1–2 wks</td></tr>
+    <tr><td><b>4 · Write-back</b></td>
+        <td>Check-in completion → PMS status transition (<code>pre_checked_in → checked_in</code>),
+            no-show handling; optional SynXis Modify Reservation later.</td>
+        <td>platform ↔ PMS</td><td>1 wk</td></tr>
+    <tr><td><b>5 · Pilot</b></td>
+        <td>One property end-to-end in CERT then prod, auto-match-rate dashboard, tune fuzzy
+            thresholds, then roll out.</td>
+        <td>All</td><td>1 wk + bake</td></tr>
+  </table>
+  <p><span class="grade">Net: ~6–8 engineering weeks</span> — most of it inside kiotel-pms, whose
+  enums, lifecycle, and migration patterns were clearly built with this integration in mind. The
+  kiosk needs <b>zero</b> native changes (its UI is platform-served web content).</p>
+
+  <h2>Risks &amp; mitigations</h2>
+  <table>
+    <tr><th>Risk</th><th>Mitigation</th></tr>
+    <tr><td>Sabre onboarding/certification slips</td>
+        <td>Start Phase 0 now; build Phases 1–3 against recorded HTNG/REST fixtures — the CERT
+            environment is only needed for certification, not development</td></tr>
+    <tr><td>Reservation delivery is SOAP/HTNG</td>
+        <td>Isolate XML behind the mapper; the rest of the PMS never sees SOAP. REST Reservation
+            Services covers retrieve/backfill.</td></tr>
+    <tr><td>Same-name / ambiguous guests</td>
+        <td>Never auto-match below threshold: confirmation number or phone last-4 prompt at the
+            kiosk, then agent fallback (which is just… today's flow)</td></tr>
+    <tr><td>PII (names, contact data) now flows PMS → platform</td>
+        <td>Scoped lookup returns the minimum fields (name, confirmation, room-type, status);
+            existing token+CIDR pattern; audit every lookup. <b>Also: rotate the hardcoded
+            Deepgram key and keep SynXis credentials in env/secrets from day one.</b></td></tr>
+    <tr><td>Sync drift (missed deliveries)</td>
+        <td>Nightly REST reconciliation sweep + Change Discovery checkpoint; alert on delta</td></tr>
+  </table>
+
+  <h2>Success metrics (wire into the ops dashboard)</h2>
+  <div class="card">
+  <b>Auto-match rate</b> (target: >85% of check-ins need no agent) ·
+  <b>median time-to-check-in</b> · <b>agent escalations per day</b> (should fall from ~100% of
+  check-ins to exceptions) · <b>sync freshness</b> (CRS event → PMS row latency) ·
+  <b>reconciliation delta</b> (missed reservations per night).
+  </div>
+
+  <div class="foot">Sources: SynXis/Aven developer portal (product catalog, REST token guide,
+  Reservation Services, CRS Reservation Delivery) · Kiotel knowledge graph + source verification
+  (property-enums.ts, guest-name-matcher.ts, id_scanjobs migrations, partner-API docs,
+  INTEGRATIONS.md all four repos) · plan drafted 2026-07-27.</div>
+</main>
+</body>
+</html>
