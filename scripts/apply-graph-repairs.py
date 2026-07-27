@@ -99,6 +99,11 @@ EXTRA_EDGES = [
      "target": "kiotel_pms_deploy_readme_kiotel_storage_spaces",
      "relation": "references", "confidence": "EXTRACTED", "confidence_score": 1.0,
      "source_file": "kiotel-pms/deploy/spaces/kiotel-storage-policy.json", "source_location": None, "weight": 1.0},
+    # audio docs' session_ai_audit concept IS the kiotel_web DB table (extract-db-schema-nodes.py)
+    {"source": "audio_services_docs_data_model_session_ai_audit",
+     "target": "kiotel_web_db_table_session_ai_audit",
+     "relation": "semantically_similar_to", "confidence": "INFERRED", "confidence_score": 0.95,
+     "source_file": "audio_services/docs/DATA_MODEL.md", "source_location": None, "weight": 1.0},
 ]
 
 # node id -> metadata patches (verified against source)
