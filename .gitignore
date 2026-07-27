@@ -9,3 +9,4 @@ graphify-out/cache/
 .DS_Store
 __pycache__/
 *.pyc
+metrics-data/

@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kiotel Graph MCP — Usage</title>
+<style>
+  .viz-root {
+    color-scheme: light;
+    --page:           #f9f9f7;
+    --surface-1:      #fcfcfb;
+    --text-primary:   #0b0b0b;
+    --text-secondary: #52514e;
+    --muted:          #898781;
+    --grid:           #e1e0d9;
+    --baseline:       #c3c2b7;
+    --border:         rgba(11,11,11,0.10);
+    --series-1:       #2a78d6;
+    --good:           #006300;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:where(:not([data-theme="light"])) .viz-root {
+      color-scheme: dark;
+      --page:           #0d0d0d;
+      --surface-1:      #1a1a19;
+      --text-primary:   #ffffff;
+      --text-secondary: #c3c2b7;
+      --muted:          #898781;
+      --grid:           #2c2c2a;
+      --baseline:       #383835;
+      --border:         rgba(255,255,255,0.10);
+      --series-1:       #3987e5;
+      --good:           #0ca30c;
+    }
+  }
+  * { box-sizing: border-box; }
+  body.viz-root { margin: 0; background: var(--page); color: var(--text-primary);
+    font: 15px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; }
+  main { max-width: 1060px; margin: 0 auto; padding: 28px 20px 64px; }
+  h1 { font-size: 1.35rem; margin: 0; letter-spacing: -0.01em; }
+  .sub { color: var(--text-secondary); font-size: 0.85rem; margin: 2px 0 20px; }
+  .tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; }
+  .tile { background: var(--surface-1); border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; }
+  .tile b { display: block; font-size: 1.5rem; font-weight: 650; }
+  .tile span { color: var(--text-secondary); font-size: 0.78rem; }
+  .tile .est { color: var(--muted); font-size: 0.68rem; display: block; }
+  .row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 14px; }
+  @media (max-width: 760px) { .row { grid-template-columns: 1fr; } }
+  .card { background: var(--surface-1); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; min-width: 0; }
+  .card h2 { font-size: 0.85rem; font-weight: 600; margin: 0 0 10px; color: var(--text-secondary); }
+  table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+  th { text-align: left; color: var(--muted); font-weight: 500; padding: 4px 8px; border-bottom: 1px solid var(--grid); }
+  td { padding: 5px 8px; border-bottom: 1px solid var(--grid); vertical-align: top; }
+  tr:last-child td { border-bottom: none; }
+  td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+  td.arg { max-width: 340px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text-secondary); }
+  .ok { color: var(--good); } .err { color: #d03b3b; }
+  svg text { font: 11px system-ui, -apple-system, "Segoe UI", sans-serif; fill: var(--text-secondary); }
+  svg .val { fill: var(--text-primary); font-weight: 600; }
+  svg .bar { fill: var(--series-1); }
+  svg .grid { stroke: var(--grid); stroke-width: 1; }
+  svg .base { stroke: var(--baseline); stroke-width: 1; }
+  #tip { position: fixed; pointer-events: none; background: var(--surface-1); color: var(--text-primary);
+    border: 1px solid var(--border); border-radius: 8px; padding: 6px 9px; font-size: 0.78rem;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.18); display: none; z-index: 10; }
+  .foot { color: var(--muted); font-size: 0.75rem; margin-top: 18px; }
+</style>
+</head>
+<body class="viz-root">
+<main>
+  <h1>Kiotel Knowledge Graph — MCP usage</h1>
+  <div class="sub" id="sub">loading…</div>
+
+  <div class="tiles" id="tiles"></div>
+
+  <div class="row">
+    <div class="card"><h2>Tool calls by tool</h2><div id="bytool"></div></div>
+    <div class="card"><h2>Tool calls per day (last 14 days)</h2><div id="byday"></div></div>
+  </div>
+
+  <div class="row">
+    <div class="card"><h2>Top questions (query_graph)</h2>
+      <table id="queries"><thead><tr><th>question</th><th class="num">asked</th></tr></thead><tbody></tbody></table>
+    </div>
+    <div class="card"><h2>Clients</h2>
+      <table id="clients"><thead><tr><th>client</th><th class="num">requests</th></tr></thead><tbody></tbody></table>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:14px"><h2>Recent activity</h2>
+    <table id="recent"><thead><tr><th>time (UTC)</th><th>tool</th><th>argument</th>
+      <th class="num">ms</th><th class="num">est. tokens saved</th><th></th></tr></thead><tbody></tbody></table>
+  </div>
+
+  <div class="foot">Auto-refreshes every 10s · token savings are an <b>estimate</b>:
+    (size of the source files each answer cites − answer size) ÷ 4, i.e. what an assistant
+    would have read without the graph · metrics stored locally in the container.</div>
+</main>
+<div id="tip"></div>
+<script>
+const tip = document.getElementById('tip');
+function showTip(e, html) { tip.innerHTML = html; tip.style.display = 'block';
+  tip.style.left = Math.min(e.clientX + 12, innerWidth - 220) + 'px'; tip.style.top = (e.clientY + 12) + 'px'; }
+function hideTip() { tip.style.display = 'none'; }
+const fmt = n => n >= 1e6 ? (n/1e6).toFixed(1) + 'M' : n >= 1e3 ? (n/1e3).toFixed(1) + 'k' : String(n);
+const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+function hbar(el, rows, key, nkey) {
+  const W = 460, rowH = 26, pad = 4, labW = 120, max = Math.max(1, ...rows.map(r => r[nkey]));
+  const H = rows.length * rowH + 8;
+  let s = `<svg viewBox="0 0 ${W} ${H}" width="100%" role="img" aria-label="calls by tool">`;
+  rows.forEach((r, i) => {
+    const y = i * rowH + pad, bw = Math.max(2, (r[nkey] / max) * (W - labW - 56));
+    s += `<text x="${labW - 8}" y="${y + 13}" text-anchor="end">${esc(r[key])}</text>` +
+      `<rect class="bar" x="${labW}" y="${y}" width="${bw}" height="16" rx="4"
+        data-tip="${esc(r[key])}: <b>${r[nkey]}</b> calls${r.saved ? ' · ~' + fmt(r.saved) + ' tokens saved' : ''}"/>` +
+      `<text class="val" x="${labW + bw + 6}" y="${y + 13}">${r[nkey]}</text>`;
+  });
+  el.innerHTML = s + '</svg>';
+  if (!rows.length) el.innerHTML = '<div class="sub">no tool calls yet</div>';
+}
+
+function vbar(el, rows) {
+  const W = 460, H = 150, padB = 22, padT = 8, max = Math.max(1, ...rows.map(r => r.n));
+  const bw = Math.min(28, (W - 20) / Math.max(rows.length, 1) - 6);
+  let s = `<svg viewBox="0 0 ${W} ${H}" width="100%" role="img" aria-label="calls per day">` +
+    `<line class="base" x1="0" y1="${H - padB}" x2="${W}" y2="${H - padB}"/>`;
+  rows.forEach((r, i) => {
+    const x = 10 + i * ((W - 20) / rows.length), bh = Math.max(2, (r.n / max) * (H - padB - padT - 14));
+    const y = H - padB - bh;
+    s += `<rect class="bar" x="${x}" y="${y}" width="${bw}" height="${bh}" rx="4"
+        data-tip="${esc(r.day)}: <b>${r.n}</b> calls"/>` +
+      `<text class="val" x="${x + bw / 2}" y="${y - 4}" text-anchor="middle">${r.n}</text>` +
+      `<text x="${x + bw / 2}" y="${H - 7}" text-anchor="middle">${r.day.slice(5)}</text>`;
+  });
+  el.innerHTML = s + '</svg>';
+  if (!rows.length) el.innerHTML = '<div class="sub">no tool calls yet</div>';
+}
+
+function fillTable(id, rows, cols) {
+  const tb = document.querySelector(`#${id} tbody`);
+  tb.innerHTML = rows.map(r => '<tr>' + cols(r) + '</tr>').join('') ||
+    '<tr><td colspan="9" class="sub">nothing yet</td></tr>';
+}
+
+async function refresh() {
+  let d;
+  try { d = await (await fetch('/stats')).json(); }
+  catch { document.getElementById('sub').textContent = 'stats unavailable'; return; }
+  const t = d.totals;
+  document.getElementById('sub').textContent =
+    `graph: ${fmt(d.graph.nodes)} nodes · ${fmt(d.graph.edges)} edges · serving since ${d.started.slice(0, 16).replace('T', ' ')} UTC`;
+  document.getElementById('tiles').innerHTML = [
+    [fmt(t.tool_calls), 'tool calls (total)'],
+    [fmt(t.today_calls), 'tool calls today'],
+    [fmt(t.sessions), 'client sessions'],
+    [`~${fmt(t.saved_tokens)}`, 'tokens saved', ' estimated'],
+    [`${t.avg_latency_ms} ms`, 'avg latency'],
+    [fmt(t.errors), 'errors'],
+  ].map(([v, l, e]) => `<div class="tile"><b>${v}</b><span>${l}</span>${e ? `<span class="est">${e}</span>` : ''}</div>`).join('');
+  hbar(document.getElementById('bytool'), d.by_tool, 'tool', 'n');
+  vbar(document.getElementById('byday'), d.per_day);
+  fillTable('queries', d.top_queries, r => `<td class="arg" title="${esc(r.arg)}">${esc(r.arg)}</td><td class="num">${r.n}</td>`);
+  fillTable('clients', d.clients, r => `<td class="arg">${esc(r.client || '(unknown)')}</td><td class="num">${r.n}</td>`);
+  fillTable('recent', d.recent, r =>
+    `<td>${esc(r.ts.slice(5, 19).replace('T', ' '))}</td><td>${esc(r.tool)}</td>` +
+    `<td class="arg" title="${esc(r.arg)}">${esc(r.arg)}</td><td class="num">${r.latency_ms}</td>` +
+    `<td class="num">${r.saved_tokens ? '~' + fmt(r.saved_tokens) : '—'}</td>` +
+    `<td>${r.ok ? '<span class="ok">ok</span>' : '<span class="err">err</span>'}</td>`);
+}
+
+document.addEventListener('mousemove', e => {
+  const el = e.target.closest('[data-tip]');
+  if (el) showTip(e, el.dataset.tip); else hideTip();
+});
+refresh();
+setInterval(refresh, 10000);
+</script>
+</body>
+</html>

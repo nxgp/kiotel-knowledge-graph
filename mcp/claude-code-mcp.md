@@ -94,6 +94,13 @@ Each teammate (Pro/Max), or an admin once for the whole workspace (Team/Enterpri
 Graphify ships assistant manifests via `graphify install`. For a generic MCP client, use the
 same `python -m graphify.serve …` command as the server entry, or the HTTP endpoint above.
 
+## Usage dashboard
+
+The server tracks its own usage — open **`http://<host>:8080/dashboard`** (no auth) to see
+live: tool calls, sessions, top questions, clients, latency, errors, and estimated tokens
+saved. `/stats` returns the same as JSON. Metrics live in SQLite under the container's
+`/data` (compose maps `./metrics-data/`).
+
 ## What to ask it
 
 - "Where does a guest's ID scan data flow, end to end?"

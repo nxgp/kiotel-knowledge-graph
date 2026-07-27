@@ -87,6 +87,24 @@ curated gap repairs (internal-import remaps, the concept→code bridges from
 `scripts/bridges.json`, falsified-edge removals, verified upgrades; idempotent) — then
 rebuild the Docker image.
 
+## Usage metrics & dashboard
+
+The container ships an observability layer (`mcp/metrics_server.py`) wrapped around the MCP
+server — same `/mcp` protocol, plus:
+
+- **`/dashboard`** — live usage dashboard (open access): tool calls total/today, client
+  sessions, estimated tokens saved, avg latency, errors, calls by tool, calls per day, top
+  questions asked, clients, and a recent-activity feed. Auto-refreshes every 10s.
+- **`/stats`** — the JSON behind the dashboard (feed it to anything else).
+- **`/healthz`** — liveness probe.
+
+Every MCP call is recorded (SQLite; `./metrics-data/` via compose, so it survives
+restarts): tool, argument, latency, response size, ok/error, client. **Token savings** are
+an estimate: each answer cites the source files it drew from — savings = (size of those
+files − answer size) ÷ 4, i.e. what an assistant would have had to read without the graph.
+Note: App Platform's disk is ephemeral — metrics reset on redeploy there; use a droplet
+volume for long-lived history.
+
 ## Production
 
 Set `GRAPHIFY_API_KEY` on the container, put TLS in front, point clients at

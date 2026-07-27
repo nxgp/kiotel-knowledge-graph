@@ -6,7 +6,9 @@ services:
     ports:
       - "8080:8080"
     environment:
-      # Uncomment to require an API key on the HTTP transport:
+      # Uncomment to require an API key on the MCP endpoint (/dashboard stays open):
       # GRAPHIFY_API_KEY: ${GRAPHIFY_API_KEY}
       PYTHONUNBUFFERED: "1"
+    volumes:
+      - ./metrics-data:/data   # persists usage metrics (SQLite) across restarts
     restart: unless-stopped
