@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kiotel Automation Plan — From Manual Agents to Autopilot</title>
+<style>
+  :root {
+    --bg: #f7f7f5; --panel: #ffffff; --ink: #1a1a1a; --muted: #6b6b6b;
+    --line: #d9d9d4; --accent: #0f6b5c; --accent-soft: #e3f0ed;
+    --ext: #fdeef2; --ext-line: #d98aa4;
+    --pms: #eef2fa; --pms-line: #9db3d8;
+    --plat: #fdf3e3; --plat-line: #d8b273;
+    --kiosk: #e9f4e7; --kiosk-line: #8fbb86;
+    --brain: #ece7f7; --brain-line: #a795d6;
+    --new: #0f6b5c;
+    --warn-bg: #fdeaea; --warn-line: #cc6b6b;
+    --code-bg: #f0f0ec;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #16181a; --panel: #1f2225; --ink: #e8e6e1; --muted: #9a9a94;
+      --line: #3a3d40; --accent: #5fc4ae; --accent-soft: #1d3833;
+      --ext: #3a2530; --ext-line: #a4607a;
+      --pms: #232c3b; --pms-line: #4d6491;
+      --plat: #37301f; --plat-line: #937b47;
+      --kiosk: #24301f; --kiosk-line: #5f7f57;
+      --brain: #2b2538; --brain-line: #6f5fa3;
+      --new: #5fc4ae;
+      --warn-bg: #3a2424; --warn-line: #a05252;
+      --code-bg: #26292c;
+    }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink);
+    font: 16px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+  main { max-width: 980px; margin: 0 auto; padding: 40px 24px 80px; }
+  h1 { font-size: 1.8rem; margin: 0 0 6px; letter-spacing: -0.02em; }
+  h2 { font-size: 1.25rem; margin: 44px 0 12px; }
+  p.lede { color: var(--muted); margin: 0 0 22px; max-width: 68ch; }
+  .pill { display: inline-block; background: var(--accent-soft); color: var(--accent);
+    border-radius: 20px; padding: 2px 12px; font-size: 0.78rem; font-weight: 600; margin: 0 6px 6px 0; }
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 16px 20px; margin: 12px 0; }
+  table { width: 100%; border-collapse: collapse; background: var(--panel); border: 1px solid var(--line);
+    border-radius: 10px; overflow: hidden; font-size: 0.9rem; }
+  th, td { text-align: left; padding: 9px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { background: var(--code-bg); font-weight: 600; }
+  tr:last-child td { border-bottom: none; }
+  code { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-size: 0.86em;
+    background: var(--code-bg); border-radius: 4px; padding: 1px 5px; }
+  .warn { background: var(--warn-bg); border: 1px solid var(--warn-line); border-radius: 10px;
+    padding: 12px 16px; margin: 10px 0; font-size: 0.92rem; }
+  .diagram-wrap { overflow-x: auto; background: var(--panel); border: 1px solid var(--line);
+    border-radius: 12px; padding: 18px; }
+  svg { display: block; min-width: 880px; max-width: 100%; height: auto; margin: 0 auto; }
+  svg text { font: 13px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; fill: var(--ink); }
+  svg text.small { font-size: 11px; fill: var(--muted); }
+  svg text.new-tag { font-size: 10px; fill: var(--new); font-weight: 700; }
+  svg .ext { fill: var(--ext); stroke: var(--ext-line); }
+  svg .pms { fill: var(--pms); stroke: var(--pms-line); }
+  svg .plat { fill: var(--plat); stroke: var(--plat-line); }
+  svg .kiosk { fill: var(--kiosk); stroke: var(--kiosk-line); }
+  svg .brain { fill: var(--brain); stroke: var(--brain-line); stroke-width: 2; }
+  svg .edge { stroke: var(--muted); stroke-width: 1.4; fill: none; marker-end: url(#arr3); }
+  svg .edge.new { stroke: var(--new); stroke-width: 2; }
+  .grade { font-size: 1.05rem; font-weight: 700; color: var(--accent); }
+  .foot { color: var(--muted); font-size: 0.82rem; margin-top: 56px; border-top: 1px solid var(--line); padding-top: 16px; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Kiotel automation: from manual agents to autopilot</h1>
+  <p class="lede">Where to put automation so it <b>scales across every property and kiosk</b>,
+  eliminates the manual agent work, and uses AI only where AI is actually the right tool.
+  Grounded in the codebase knowledge graph — every claim below maps to real code.</p>
+  <div>
+    <span class="pill">Answer: automate at the HUB, not in the spokes</span>
+    <span class="pill">New: Concierge Brain service</span>
+    <span class="pill">Kiosk &amp; PMS core: unchanged</span>
+  </div>
+
+  <h2>1 · The manual work today (the automation inventory)</h2>
+  <table>
+    <tr><th>Manual task</th><th>Who does it</th><th>Evidence in code</th><th>Automatable?</th></tr>
+    <tr><td>Look up a guest's booking at check-in, type the name into the session</td>
+        <td>Agent, every check-in</td>
+        <td><code>t_session_info.guest_name</code> populated per session by hand;
+            <code>guest-name-matcher.ts</code> only verifies</td>
+        <td><b>Fully</b> — SynXis plan (data) + brain (orchestration)</td></tr>
+    <tr><td>Drive the kiosk step-by-step with RELAY commands
+            (<code>STARTSCAN</code>, <code>CASHIN/CASHOUT</code>, key dispense, <code>SPEAK</code>…)</td>
+        <td>Agent, live per session</td>
+        <td>Agent actions arrive as <code>RELAY:&lt;from&gt;:CMD**&lt;COMMAND&gt;**</code> →
+            <code>processCommand</code>; kiosk streams telemetry back
+            (<code>documentScanned</code>, <code>sessionEvent</code>, <code>CASHEVENT</code>…)</td>
+        <td><b>Fully</b> for the happy path — it's a deterministic state machine</td></tr>
+    <tr><td>Copy guest ID fields from platform into PMS forms</td>
+        <td>Agent / front desk</td>
+        <td><code>pms-autofill</code> browser extension (<code>ext_oauth</code>)</td>
+        <td><b>Fully</b> — dies naturally once PMS↔platform APIs exist</td></tr>
+    <tr><td>Answer guest questions at the kiosk</td>
+        <td>Agent (video escalation) or avatar small-talk</td>
+        <td>AI avatar is deliberately <b>action-less</b> (LLM → TTS only)</td>
+        <td><b>Mostly</b> — RAG-grounded avatar answers; humans for the rest</td></tr>
+    <tr><td>Send guest messages (presets)</td>
+        <td>Agent</td>
+        <td><code>guest_msg_input</code> + <code>communication_presets</code> tables</td>
+        <td><b>Mostly</b> — auto-send deterministic ones; AI drafts the rest</td></tr>
+    <tr><td>Read call-audit results, catch problems</td>
+        <td>Ops, after the fact</td>
+        <td><code>session_ai_audit</code> rows land per session; review is manual</td>
+        <td><b>Mostly</b> — AI triage, humans on flags</td></tr>
+    <tr><td>Booking upkeep: no-shows, status sweeps, housekeeping tasks on checkout</td>
+        <td>PMS operators</td>
+        <td>Full lifecycle enums exist (<code>no_show</code>, transitions); staff task portal exists</td>
+        <td><b>Fully</b> — scheduled rules, no AI needed</td></tr>
+  </table>
+
+  <h2>2 · Why the hub is the place</h2>
+  <div class="card">
+  <p>The graph shows a strict <b>hub-and-spoke</b>: every live event already flows through
+  <code>kiotel_web</code> — the kiosk's Socket.IO telemetry, session lifecycle, scans, payments,
+  recording control, agent commands. The PMS is a system of record; the kiosk is an actuator;
+  audio is an observer. <b>Automation belongs where the events are.</b></p>
+  <p>Concretely: a new <b>Concierge Brain</b> service that connects to the platform
+  <em>exactly like an agent does</em> — same Socket.IO registration, same RELAY command
+  vocabulary, same scoped auth. To the rest of the system it IS an agent (a tireless one).
+  That single design choice means: <b>zero kiosk changes, zero PMS-core changes, zero new
+  protocols</b> — and per-property rollout is just "assign the robot agent to the property".</p>
+  </div>
+
+  <h2>3 · Target architecture</h2>
+  <div class="diagram-wrap">
+  <svg viewBox="0 0 900 560" xmlns="http://www.w3.org/2000/svg" role="img"
+       aria-label="Concierge Brain subscribes to platform telemetry and issues RELAY commands like an agent; data plane is PMS lookup API fed by SynXis; humans handle exceptions only">
+    <defs>
+      <marker id="arr3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+        <path d="M0,0 L10,5 L0,10 z" fill="currentColor" opacity="0.65"/>
+      </marker>
+    </defs>
+
+    <rect class="kiosk" x="20" y="230" width="230" height="90" rx="10"/>
+    <text x="135" y="258" text-anchor="middle" font-weight="600">Lobby kiosks (fleet)</text>
+    <text x="135" y="278" text-anchor="middle" class="small">telemetry out · RELAY in</text>
+    <text x="135" y="296" text-anchor="middle" class="small">avatar stays ACTION-LESS</text>
+
+    <path class="edge" style="color:var(--muted)" d="M250,262 L340,262"/>
+    <text x="258" y="252" class="small">Socket.IO (existing)</text>
+
+    <rect class="plat" x="342" y="210" width="250" height="130" rx="10"/>
+    <text x="467" y="236" text-anchor="middle" font-weight="600">kiotel_web — the hub</text>
+    <text x="467" y="256" text-anchor="middle" class="small">sessions · scans · payments · relay bus</text>
+    <text x="467" y="274" text-anchor="middle" class="small">guest-name-matcher · session_events</text>
+    <text x="467" y="292" text-anchor="middle" class="small">device + agent auth (existing)</text>
+    <text x="467" y="322" text-anchor="middle" class="small">exposes the SAME agent interface to the brain</text>
+
+    <path class="edge new" style="color:var(--new)" d="M592,250 L680,220"/>
+    <path class="edge new" style="color:var(--new)" d="M680,260 L592,285"/>
+    <text x="600" y="222" class="new-tag">telemetry stream</text>
+    <text x="612" y="292" class="new-tag">RELAY commands</text>
+
+    <rect class="brain" x="682" y="170" width="198" height="180" rx="12"/>
+    <text x="781" y="196" text-anchor="middle" font-weight="600">Concierge Brain</text>
+    <text x="781" y="214" text-anchor="middle" class="new-tag">NEW SERVICE</text>
+    <text x="781" y="236" text-anchor="middle" class="small">deterministic session</text>
+    <text x="781" y="252" text-anchor="middle" class="small">state machine (happy path)</text>
+    <text x="781" y="274" text-anchor="middle" class="small">+ LLM tools: match ranking,</text>
+    <text x="781" y="290" text-anchor="middle" class="small">guest Q&amp;A (RAG), msg drafts,</text>
+    <text x="781" y="306" text-anchor="middle" class="small">audit triage</text>
+    <text x="781" y="330" text-anchor="middle" class="small">policy guards + kill switch</text>
+
+    <path class="edge new" style="color:var(--new)" d="M781,350 L781,400"/>
+    <text x="792" y="380" class="new-tag">escalate exceptions</text>
+
+    <rect class="ext" x="682" y="402" width="198" height="70" rx="10"/>
+    <text x="781" y="430" text-anchor="middle" font-weight="600">Human agent console</text>
+    <text x="781" y="450" text-anchor="middle" class="small">exceptions only · full override</text>
+
+    <path class="edge new" style="color:var(--new)" d="M467,340 L467,400"/>
+    <text x="478" y="374" class="new-tag">NEW · reservation lookup + status API</text>
+
+    <rect class="pms" x="342" y="402" width="250" height="90" rx="10"/>
+    <text x="467" y="428" text-anchor="middle" font-weight="600">kiotel-pms</text>
+    <text x="467" y="448" text-anchor="middle" class="small">system of record: reservations, folio</text>
+    <text x="467" y="466" text-anchor="middle" class="small">synxis-sync keeps it current</text>
+
+    <path class="edge new" style="color:var(--new)" d="M342,447 L250,447"/>
+    <text x="258" y="437" class="new-tag">HTNG delivery / REST</text>
+
+    <rect class="ext" x="20" y="402" width="230" height="90" rx="10"/>
+    <text x="135" y="430" text-anchor="middle" font-weight="600">SynXis CRS + OTAs</text>
+    <text x="135" y="450" text-anchor="middle" class="small">bookings arrive from everywhere</text>
+
+    <rect class="ext" x="20" y="60" width="230" height="70" rx="10"/>
+    <text x="135" y="88" text-anchor="middle" font-weight="600">audio_services</text>
+    <text x="135" y="108" text-anchor="middle" class="small">records + audits every call</text>
+    <path class="edge new" style="color:var(--new)" d="M250,95 Q500,95 700,168"/>
+    <text x="430" y="82" class="new-tag">audit feed → AI triage in the brain</text>
+  </svg>
+  </div>
+
+  <h2>4 · Deterministic first, AI where it earns its place</h2>
+  <table>
+    <tr><th>Decision</th><th>Mechanism</th><th>Why</th></tr>
+    <tr><td>Advance the check-in flow (scan → match → pay → key → receipt)</td>
+        <td><b>State machine</b> on kiosk telemetry — no AI</td>
+        <td>The RELAY vocabulary + telemetry events make this pure orchestration; must be
+            auditable and repeatable</td></tr>
+    <tr><td>Money &amp; keys (cash accept/dispense, key cut)</td>
+        <td><b>Deterministic guards only</b> — AI may never trigger these; brain issues them
+            only from verified state (matched reservation + payment event)</td>
+        <td>Same reasoning as the action-less avatar: no LLM in the actuation path</td></tr>
+    <tr><td>Ambiguous booking match (typos, OCR noise, same-name guests)</td>
+        <td><b>LLM ranking</b> over PMS candidates (name + dates + party size), output =
+            a ranked list with confidence, never an action; below threshold → kiosk prompts
+            for confirmation #/phone → agent</td>
+        <td>Fuzzy human-data problem — exactly what LLMs are good at</td></tr>
+    <tr><td>Guest questions ("when is breakfast?", "where do I park?")</td>
+        <td><b>RAG avatar</b>: answers grounded in <code>property_rules</code> +
+            property docs; avatar stays TTS-only (action-less)</td>
+        <td>Removes most video escalations without touching the safety design</td></tr>
+    <tr><td>Guest messages</td>
+        <td>Deterministic triggers send <code>communication_presets</code>; LLM drafts
+            non-standard replies into an <b>approval queue</b></td>
+        <td>Volume is preset-shaped; the long tail gets a human click</td></tr>
+    <tr><td>Call-audit review</td>
+        <td><b>LLM triage</b> over <code>session_ai_audit</code>: cluster, score, surface the
+            5 sessions worth a human's time; weekly digest</td>
+        <td>Turns an unread firehose into an exception list</td></tr>
+    <tr><td>Back-office sweeps (no-shows, checkout → housekeeping tasks)</td>
+        <td><b>Cron rules</b> in PMS — no AI</td>
+        <td>Pure calendar logic; lifecycle enums already model it</td></tr>
+  </table>
+
+  <h2>5 · Build phases</h2>
+  <table>
+    <tr><th>Phase</th><th>Deliverable</th><th>Depends on</th><th>Est.</th></tr>
+    <tr><td><b>B0 · Shadow mode</b></td>
+        <td>Brain service skeleton (registers as agent role, read-only): consumes telemetry,
+            <em>recommends</em> next action, logs agreement vs what human agents actually did.
+            Zero risk; produces the evidence + tuning corpus.</td>
+        <td>Nothing — start now</td><td>2 wks</td></tr>
+    <tr><td><b>B1 · Check-in autopilot</b></td>
+        <td>Happy-path state machine goes live per property: auto-match (via PMS lookup) →
+            RELAY sequence → check-in write-back. Agent console shows a live "autopilot"
+            session view with a takeover button.</td>
+        <td>SynXis plan Phases 1–3</td><td>2–3 wks</td></tr>
+    <tr><td><b>B2 · Guest-facing AI</b></td>
+        <td>RAG-grounded avatar answers (action-less preserved) + preset auto-messaging +
+            LLM draft queue.</td>
+        <td>B0 telemetry; property content in PMS/platform</td><td>2 wks</td></tr>
+    <tr><td><b>B3 · Ops AI</b></td>
+        <td>Audit triage digest + anomaly flags (cash events, repeated match failures,
+            device errors) into the agent console.</td>
+        <td>B0</td><td>1–2 wks</td></tr>
+    <tr><td><b>B4 · Back-office rules</b></td>
+        <td>No-show sweeps, checkout → housekeeping task creation, sync-drift alerts.</td>
+        <td>SynXis Phase 1</td><td>1 wk</td></tr>
+    <tr><td><b>B5 · Scale-out</b></td>
+        <td>Per-property flags → fleet rollout; brain scales horizontally (stateless workers,
+            session state in Redis); exception-only staffing model.</td>
+        <td>B1–B4 baked</td><td>ongoing</td></tr>
+  </table>
+  <p><span class="grade">Net: ~8–10 engineering weeks beyond the SynXis data plane</span>, and
+  B0 can start <b>today</b> — it needs nothing from Sabre.</p>
+
+  <h2>6 · Where the code lives</h2>
+  <table>
+    <tr><th>Repo</th><th>Changes</th></tr>
+    <tr><td><b>NEW: kiotel-brain</b> (or <code>kiotel_web/core/brain</code> as its own
+        deployable)</td>
+        <td>The Concierge Brain: Socket.IO agent client, state machine, LLM tool layer,
+            policy guards, shadow-mode recorder. Own container on DO, scales horizontally.</td></tr>
+    <tr><td><b>kiotel_web</b></td>
+        <td>Agent-role scoping for a service principal ("robot agent"), autopilot session view +
+            takeover button in the console, RAG content endpoint, message approval queue</td></tr>
+    <tr><td><b>kiotel-pms</b></td>
+        <td>Everything from the SynXis plan (sync, lookup API, write-back) + cron rules for
+            sweeps/tasks</td></tr>
+    <tr><td><b>kiotel_hardware</b></td>
+        <td><b>None.</b> The kiosk cannot tell the brain from a human agent.</td></tr>
+    <tr><td><b>audio_services</b></td>
+        <td>None required (audit feed already lands in <code>session_ai_audit</code>);
+            optional webhook for real-time triage later</td></tr>
+  </table>
+
+  <h2>7 · Safety rails (non-negotiable)</h2>
+  <div class="warn">
+  <b>1.</b> The avatar stays action-less — guest speech never reaches an actuation path (the
+  codebase's own prompt-injection defense; the brain acts only on structured telemetry).<br>
+  <b>2.</b> LLMs rank and draft; they never directly trigger cash, keys, or status transitions —
+  deterministic guards own actuation.<br>
+  <b>3.</b> Every brain action lands in <code>session_events</code> with its reasoning — same
+  audit trail as human agents, reviewable in the console.<br>
+  <b>4.</b> Per-property kill switch: flip the flag, humans are back in the loop instantly.<br>
+  <b>5.</b> Rotate the hardcoded Deepgram key; all brain/SynXis credentials in env/secrets.
+  </div>
+
+  <h2>8 · What "scaled" looks like</h2>
+  <div class="card">
+  Today: <b>1 agent ≈ a few concurrent kiosks</b>, every check-in touched by hand.<br>
+  After B1: agents supervise; autopilot handles the happy path (target <b>&gt;85% zero-touch
+  check-ins</b>).<br>
+  After B5: <b>1 agent supervises a fleet</b> — staffing scales with exceptions, not
+  with properties. Dashboard metrics: zero-touch rate, median check-in time, escalations/day,
+  autopilot-vs-human agreement (from B0 onward), audit flags handled.
+  </div>
+
+  <div class="foot">Grounded in the Kiotel knowledge graph + source verification: RELAY/
+  processCommand vocabulary (kiotel_hardware INTEGRATIONS.md), action-less avatar
+  (ARCHITECTURE.md), t_session_info / guest_msg_input / communication_presets /
+  session_ai_audit (db_schema_view.ts), reservation lifecycle (property-enums.ts), partner-API
+  auth patterns (kiotel-pms INTEGRATIONS.md). Companion doc: synxis-integration-plan.html
+  (the data plane). Drafted 2026-07-27.</div>
+</main>
+</body>
+</html>
