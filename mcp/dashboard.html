@@ -48,6 +48,13 @@
   @media (max-width: 760px) { .row { grid-template-columns: 1fr; } }
   .card { background: var(--surface-1); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; min-width: 0; }
   .card h2 { font-size: 0.85rem; font-weight: 600; margin: 0 0 10px; color: var(--text-secondary); }
+  .card h2 .hint { font-weight: 400; color: var(--muted); font-size: 0.78rem; }
+  .note { color: var(--muted); font-size: 0.72rem; margin-top: 8px; line-height: 1.5; }
+  .roi-row { display: flex; justify-content: space-between; align-items: baseline; padding: 6px 0; border-bottom: 1px solid var(--grid); }
+  .roi-row:last-child { border-bottom: none; }
+  .roi-row .label { color: var(--text-secondary); font-size: 0.82rem; }
+  .roi-row .value { font-variant-numeric: tabular-nums; font-weight: 600; }
+  .roi-row .value .tag { font-weight: 400; color: var(--muted); font-size: 0.7rem; margin-left: 4px; }
   table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
   th { text-align: left; color: var(--muted); font-weight: 500; padding: 4px 8px; border-bottom: 1px solid var(--grid); }
   td { padding: 5px 8px; border-bottom: 1px solid var(--grid); vertical-align: top; }
@@ -82,8 +89,23 @@
     <div class="card"><h2>Top questions (query_graph)</h2>
       <table id="queries"><thead><tr><th>question</th><th class="num">asked</th></tr></thead><tbody></tbody></table>
     </div>
-    <div class="card"><h2>Clients</h2>
+    <div class="card">
+      <h2>Clients <span class="hint">— connecting tool, not the underlying model</span></h2>
       <table id="clients"><thead><tr><th>client</th><th class="num">requests</th></tr></thead><tbody></tbody></table>
+      <div class="note">MCP's handshake only reports the connecting tool's name/version
+        (e.g. <code>claude-code/2.1</code>) — the protocol never tells the server which LLM
+        is behind it, so that column doesn't exist here rather than being guessed.</div>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="card">
+      <h2>Most-cited source files</h2>
+      <div id="topfiles"></div>
+    </div>
+    <div class="card">
+      <h2>Graph build cost vs. ongoing savings <span class="hint">— tokens, not $</span></h2>
+      <div id="roi"></div>
     </div>
   </div>
 
@@ -92,9 +114,13 @@
       <th class="num">ms</th><th class="num">est. tokens saved</th><th></th></tr></thead><tbody></tbody></table>
   </div>
 
-  <div class="foot">Auto-refreshes every 10s · token savings are an <b>estimate</b>:
+  <div class="foot">Auto-refreshes every 10s · <b>token savings</b> are an estimate:
     (size of the source files each answer cites − answer size) ÷ 4, i.e. what an assistant
-    would have read without the graph · metrics stored locally in the container.</div>
+    would have read without the graph — no $ rate is assumed anywhere on this page, since
+    that's a business assumption for Kiotel to set, not a fact this server can assert ·
+    <b>build cost</b> (tokens) is the real, non-estimated figure from the actual graphify
+    extraction run · metrics stored locally in the container, reset to zero whenever the
+    graph is rebuilt or the metrics volume is cleared.</div>
 </main>
 <div id="tip"></div>
 <script>
@@ -128,8 +154,8 @@ function vbar(el, rows) {
   rows.forEach((r, i) => {
     const x = 10 + i * ((W - 20) / rows.length), bh = Math.max(2, (r.n / max) * (H - padB - padT - 14));
     const y = H - padB - bh;
-    s += `<rect class="bar" x="${x}" y="${y}" width="${bw}" height="${bh}" rx="4"
-        data-tip="${esc(r.day)}: <b>${r.n}</b> calls"/>` +
+    const tip = `${esc(r.day)}: <b>${r.n}</b> calls` + (r.saved ? ` · ~${fmt(r.saved)} tokens saved` : '');
+    s += `<rect class="bar" x="${x}" y="${y}" width="${bw}" height="${bh}" rx="4" data-tip="${tip}"/>` +
       `<text class="val" x="${x + bw / 2}" y="${y - 4}" text-anchor="middle">${r.n}</text>` +
       `<text x="${x + bw / 2}" y="${H - 7}" text-anchor="middle">${r.day.slice(5)}</text>`;
   });
@@ -143,6 +169,34 @@ function fillTable(id, rows, cols) {
     '<tr><td colspan="9" class="sub">nothing yet</td></tr>';
 }
 
+function renderTopFiles(el, rows) {
+  if (!rows.length) { el.innerHTML = '<div class="sub">no files cited yet</div>'; return; }
+  hbar(el, rows.map(r => ({ file: r.file.split('/').slice(-2).join('/'), full: r.file, n: r.hits })),
+    'file', 'n');
+  // hbar() built tooltips from generic {n} calls wording; patch to "citations" for this list
+  el.querySelectorAll('rect[data-tip]').forEach((r, i) => {
+    r.setAttribute('data-tip', `${esc(rows[i].file)}: <b>${rows[i].hits}</b> citations`);
+  });
+}
+
+function renderRoi(el, build, totals) {
+  const buildTok = build.build_input_tokens + build.build_output_tokens;
+  const ratio = buildTok > 0 ? (totals.saved_tokens / buildTok) : null;
+  const rows = [
+    ['One-time build cost', `${fmt(buildTok)}<span class="tag">real, from cost.json</span>`],
+    ['&nbsp;&nbsp;— corpus indexed', `${fmt(build.corpus_files)} files`],
+    ['&nbsp;&nbsp;— built', build.last_build_date ? build.last_build_date.slice(0, 10) : '—'],
+    ['Cumulative ongoing savings', `~${fmt(totals.saved_tokens)}<span class="tag">estimated, see footer</span>`],
+    ['Coverage so far', `${totals.files_reached} / ${totals.corpus_files || '?'} files reached by real queries`],
+  ];
+  if (ratio !== null) {
+    rows.push(['Rough payoff', ratio >= 1
+      ? `already ~${ratio.toFixed(1)}× the one-time build cost`
+      : `~${(ratio * 100).toFixed(0)}% of the way to recovering the build cost`]);
+  }
+  el.innerHTML = rows.map(([l, v]) => `<div class="roi-row"><span class="label">${l}</span><span class="value">${v}</span></div>`).join('');
+}
+
 async function refresh() {
   let d;
   try { d = await (await fetch('/stats')).json(); }
@@ -154,14 +208,18 @@ async function refresh() {
     [fmt(t.tool_calls), 'tool calls (total)'],
     [fmt(t.today_calls), 'tool calls today'],
     [fmt(t.sessions), 'client sessions'],
-    [`~${fmt(t.saved_tokens)}`, 'tokens saved', ' estimated'],
-    [`${t.avg_latency_ms} ms`, 'avg latency'],
+    [t.avg_calls_per_session, 'avg calls / session'],
+    [`~${fmt(t.saved_tokens)}`, 'tokens saved', 'estimated'],
+    [`${t.p50} / ${t.p95} ms`, 'latency (p50 / p95)'],
+    [`${t.files_reached} / ${t.corpus_files || '?'}`, 'files reached', 'of the indexed corpus'],
     [fmt(t.errors), 'errors'],
   ].map(([v, l, e]) => `<div class="tile"><b>${v}</b><span>${l}</span>${e ? `<span class="est">${e}</span>` : ''}</div>`).join('');
   hbar(document.getElementById('bytool'), d.by_tool, 'tool', 'n');
   vbar(document.getElementById('byday'), d.per_day);
   fillTable('queries', d.top_queries, r => `<td class="arg" title="${esc(r.arg)}">${esc(r.arg)}</td><td class="num">${r.n}</td>`);
   fillTable('clients', d.clients, r => `<td class="arg">${esc(r.client || '(unknown)')}</td><td class="num">${r.n}</td>`);
+  renderTopFiles(document.getElementById('topfiles'), d.top_files);
+  renderRoi(document.getElementById('roi'), d.build, t);
   fillTable('recent', d.recent, r =>
     `<td>${esc(r.ts.slice(5, 19).replace('T', ' '))}</td><td>${esc(r.tool)}</td>` +
     `<td class="arg" title="${esc(r.arg)}">${esc(r.arg)}</td><td class="num">${r.latency_ms}</td>` +

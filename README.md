@@ -93,17 +93,34 @@ The container ships an observability layer (`mcp/metrics_server.py`) wrapped aro
 server — same `/mcp` protocol, plus:
 
 - **`/dashboard`** — live usage dashboard (open access): tool calls total/today, client
-  sessions, estimated tokens saved, avg latency, errors, calls by tool, calls per day, top
-  questions asked, clients, and a recent-activity feed. Auto-refreshes every 10s.
+  sessions, avg calls/session, estimated tokens saved, p50/p95 latency, corpus coverage
+  (distinct files reached by real queries, out of the indexed total), errors, calls by
+  tool, calls per day, top questions asked, most-cited source files, a build-cost-vs-
+  ongoing-savings breakdown, clients, and a recent-activity feed. Auto-refreshes every 10s.
 - **`/stats`** — the JSON behind the dashboard (feed it to anything else).
 - **`/healthz`** — liveness probe.
 
 Every MCP call is recorded (SQLite; `./metrics-data/` via compose, so it survives
-restarts): tool, argument, latency, response size, ok/error, client. **Token savings** are
-an estimate: each answer cites the source files it drew from — savings = (size of those
-files − answer size) ÷ 4, i.e. what an assistant would have had to read without the graph.
+restarts): tool, argument, latency, response size, ok/error, client, and which source
+files the answer cited. **Token savings** are an estimate: each answer cites the source
+files it drew from — savings = (size of those files − answer size) ÷ 4, i.e. what an
+assistant would have had to read without the graph. **No $ figure is computed anywhere**
+— converting tokens to dollars requires a price-per-token assumption this server has no
+basis to assert, so it's left as tokens for Kiotel to convert using whatever rate is
+actually relevant. The one-time **graph build cost**, by contrast, is not an estimate —
+it's the real input/output token count from the actual extraction run, read from
+`graphify-out/cost.json` (baked into the image), shown alongside cumulative savings for a
+rough build-vs-payoff picture — both figures clearly labeled as real vs. estimated so
+they're never confused.
+
+**On "which model is asking":** MCP's `initialize` handshake only exposes the connecting
+*tool's* name/version (e.g. `claude-code/2.1`) — the protocol has no field for the
+underlying LLM. The dashboard's Clients panel is labelled accordingly; there's no
+fabricated model-attribution column.
+
 Note: App Platform's disk is ephemeral — metrics reset on redeploy there; use a droplet
-volume for long-lived history.
+volume for long-lived history. The metrics DB only ever reflects real MCP traffic — it
+starts empty on every fresh deploy and is never pre-seeded.
 
 ## Production
 

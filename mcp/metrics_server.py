@@ -18,6 +18,25 @@ Token-savings model (honest heuristic, shown as an estimate in the UI):
   Without the graph, an agent answering the same question would have had to read
   those files. saved = (bytes of distinct cited files - response bytes) / 4.
   File sizes ship in the image as file-sizes.json, generated from build-root.
+  This is a token-count estimate, not a dollar figure - no per-token price is
+  assumed anywhere in this file, deliberately: any $/token rate is a business
+  assumption for Kiotel to set, not a fact this server can assert.
+
+Also tracked (all from real data, nothing simulated):
+  - graph BUILD cost (one-time): real input/output tokens from the actual
+    graphify extraction run, read from cost.json - contrasted against the
+    cumulative ONGOING per-query savings above, for a rough build-vs-payoff
+    picture in token terms.
+  - p50/p95 tool-call latency (not just mean, which one slow call can hide).
+  - distinct source files ever cited across all real queries ("coverage") out
+    of the total corpus, plus the most-cited files - shows which parts of the
+    codebase the graph is actually answering questions about.
+  - avg tool calls per session (session depth, not just session count).
+
+What this does NOT and CANNOT track: which underlying LLM/model is asking.
+MCP's initialize handshake only carries clientInfo {name, version} for the
+connecting tool (e.g. "claude-code"/"2.1") - never the model behind it. The
+"Clients" panel is labelled accordingly; there is no fabricated model column.
 """
 import asyncio
 import json
@@ -35,6 +54,8 @@ GRAPH_PATH = os.environ.get("GRAPH_PATH", "/app/graph.json")
 DB_PATH = os.environ.get("METRICS_DB", "/data/metrics.db")
 SIZES_PATH = os.environ.get("FILE_SIZES", "/app/file-sizes.json")
 DASH_PATH = os.environ.get("DASHBOARD_HTML", "/app/dashboard.html")
+COST_PATH = os.environ.get("BUILD_COST_JSON", "/app/cost.json")
+MANIFEST_PATH = os.environ.get("CORPUS_MANIFEST", "/app/manifest.json")
 PORT = int(os.environ.get("PORT", "8080"))
 API_KEY = (os.environ.get("GRAPHIFY_API_KEY") or "").strip() or None
 
@@ -50,6 +71,10 @@ def _db() -> sqlite3.Connection:
         " id INTEGER PRIMARY KEY AUTOINCREMENT, ts TEXT, method TEXT, tool TEXT,"
         " arg TEXT, latency_ms INTEGER, resp_bytes INTEGER, saved_tokens INTEGER,"
         " ok INTEGER, client TEXT)"
+    )
+    conn.execute(
+        "CREATE TABLE IF NOT EXISTS cited_files ("
+        " file TEXT PRIMARY KEY, first_seen TEXT, last_seen TEXT, hits INTEGER DEFAULT 0)"
     )
     conn.commit()
     return conn
@@ -71,8 +96,31 @@ def _graph_meta() -> dict:
         return {"nodes": 0, "edges": 0}
 
 
+def _build_meta() -> dict:
+    """One-time graph-extraction cost, from the real graphify cost.json (baked into the
+    image at build time) - not an estimate. Distinct from per-query token savings below."""
+    try:
+        cost = json.loads(Path(COST_PATH).read_text(encoding="utf-8"))
+    except Exception:
+        cost = {"runs": [], "total_input_tokens": 0, "total_output_tokens": 0}
+    try:
+        corpus_files = len(json.loads(Path(MANIFEST_PATH).read_text(encoding="utf-8")))
+    except Exception:
+        corpus_files = 0
+    runs = cost.get("runs", [])
+    return {
+        "build_input_tokens": cost.get("total_input_tokens", 0),
+        "build_output_tokens": cost.get("total_output_tokens", 0),
+        "build_runs": len(runs),
+        "first_build_date": runs[0]["date"] if runs else None,
+        "last_build_date": runs[-1]["date"] if runs else None,
+        "corpus_files": corpus_files,
+    }
+
+
 SIZES = _load_sizes()
 META = _graph_meta()
+BUILD = _build_meta()
 STARTED = datetime.now(timezone.utc).isoformat()
 Path(DB_PATH).parent.mkdir(parents=True, exist_ok=True)
 _db().close()
@@ -97,13 +145,16 @@ def _summarize_call(body: dict) -> tuple[str, str, str]:
     return method, tool, str(arg)[:300]
 
 
-def _saved_tokens(resp_text: str, resp_bytes: int) -> int:
-    cited = {m for m in CITED_RE.findall(resp_text)}
+def _cited_files(resp_text: str) -> set[str]:
+    return {m for m in CITED_RE.findall(resp_text)}
+
+
+def _saved_tokens(cited: set[str], resp_bytes: int) -> int:
     total = sum(SIZES.get(c, 0) for c in cited)
     return max(0, (total - resp_bytes) // 4)
 
 
-def _record(method, tool, arg, latency_ms, resp_bytes, saved, ok, client) -> None:
+def _record(method, tool, arg, latency_ms, resp_bytes, saved, ok, client, cited: set[str]) -> None:
     with _lock:
         conn = _db()
         conn.execute(
@@ -111,8 +162,24 @@ def _record(method, tool, arg, latency_ms, resp_bytes, saved, ok, client) -> Non
             " saved_tokens, ok, client) VALUES (?,?,?,?,?,?,?,?,?)",
             (datetime.now(timezone.utc).isoformat(), method, tool, arg,
              latency_ms, resp_bytes, saved, 1 if ok else 0, client))
+        now = datetime.now(timezone.utc).isoformat()
+        for f in cited:
+            conn.execute(
+                "INSERT INTO cited_files (file, first_seen, last_seen, hits) VALUES (?,?,?,1)"
+                " ON CONFLICT(file) DO UPDATE SET last_seen=excluded.last_seen, hits=hits+1",
+                (f, now, now))
         conn.commit()
         conn.close()
+
+
+def _percentiles(sorted_vals: list[int], pcts: tuple[float, ...]) -> dict[str, int]:
+    if not sorted_vals:
+        return {f"p{int(p * 100)}": 0 for p in pcts}
+    out = {}
+    for p in pcts:
+        idx = min(len(sorted_vals) - 1, int(round(p * (len(sorted_vals) - 1))))
+        out[f"p{int(p * 100)}"] = sorted_vals[idx]
+    return out
 
 
 def _stats() -> dict:
@@ -121,24 +188,38 @@ def _stats() -> dict:
     q = lambda sql, *p: [dict(r) for r in conn.execute(sql, p).fetchall()]  # noqa: E731
     one = lambda sql, *p: conn.execute(sql, p).fetchone()[0]  # noqa: E731
     calls = "method='tools/call'"
+
+    tool_calls = one(f"SELECT COUNT(*) FROM events WHERE {calls}")
+    sessions = one("SELECT COUNT(*) FROM events WHERE method='initialize'")
+    latencies = sorted(r[0] for r in conn.execute(
+        f"SELECT latency_ms FROM events WHERE {calls} ORDER BY latency_ms").fetchall())
+    corpus_files = BUILD.get("corpus_files") or 0
+    files_reached = one("SELECT COUNT(*) FROM cited_files")
+
     out = {
-        "graph": META, "started": STARTED,
+        "graph": META, "build": BUILD, "started": STARTED,
         "totals": {
             "requests": one("SELECT COUNT(*) FROM events"),
-            "tool_calls": one(f"SELECT COUNT(*) FROM events WHERE {calls}"),
-            "sessions": one("SELECT COUNT(*) FROM events WHERE method='initialize'"),
+            "tool_calls": tool_calls,
+            "sessions": sessions,
+            "avg_calls_per_session": round(tool_calls / sessions, 1) if sessions else 0,
             "errors": one("SELECT COUNT(*) FROM events WHERE ok=0"),
             "saved_tokens": one(f"SELECT COALESCE(SUM(saved_tokens),0) FROM events WHERE {calls}"),
             "avg_latency_ms": one(f"SELECT COALESCE(ROUND(AVG(latency_ms)),0) FROM events WHERE {calls}"),
             "today_calls": one(f"SELECT COUNT(*) FROM events WHERE {calls} AND ts >= date('now')"),
+            "files_reached": files_reached,
+            "corpus_files": corpus_files,
+            **_percentiles(latencies, (0.5, 0.95)),
         },
         "by_tool": q(f"SELECT tool, COUNT(*) n, COALESCE(SUM(saved_tokens),0) saved"
                      f" FROM events WHERE {calls} GROUP BY tool ORDER BY n DESC"),
-        "per_day": q(f"SELECT substr(ts,1,10) day, COUNT(*) n FROM events WHERE {calls}"
+        "per_day": q(f"SELECT substr(ts,1,10) day, COUNT(*) n,"
+                     f" COALESCE(SUM(saved_tokens),0) saved FROM events WHERE {calls}"
                      f" AND ts >= date('now','-13 days') GROUP BY day ORDER BY day"),
         "top_queries": q(f"SELECT arg, COUNT(*) n FROM events WHERE {calls} AND tool='query_graph'"
                          f" AND arg != '' GROUP BY arg ORDER BY n DESC LIMIT 10"),
         "clients": q("SELECT client, COUNT(*) n FROM events GROUP BY client ORDER BY n DESC LIMIT 8"),
+        "top_files": q("SELECT file, hits FROM cited_files ORDER BY hits DESC LIMIT 8"),
         "recent": q(f"SELECT ts, tool, arg, latency_ms, saved_tokens, ok FROM events"
                     f" WHERE {calls} ORDER BY id DESC LIMIT 20"),
     }
@@ -228,11 +309,12 @@ async def app(scope, receive, send):
             latency = int((time.monotonic() - t0) * 1000)
             resp = b"".join(resp_chunks)
             text = resp.decode(errors="replace")
-            saved = _saved_tokens(text, len(resp)) if method == "tools/call" else 0
+            cited = _cited_files(text) if method == "tools/call" else set()
+            saved = _saved_tokens(cited, len(resp)) if method == "tools/call" else 0
             ok = (status_holder["status"] < 400 and '"error"' not in text[:2000]
                   and '"isError": true' not in text and '"isError":true' not in text)
             await asyncio.to_thread(_record, method, tool, arg, latency,
-                                    len(resp), saved, ok, client)
+                                    len(resp), saved, ok, client, cited)
 
 
 if __name__ == "__main__":
