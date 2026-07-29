@@ -4,7 +4,12 @@
 Wraps graphify's Streamable-HTTP MCP ASGI app with a thin metrics layer:
 
   /mcp        -> graphify MCP server (unchanged protocol), every call recorded
-  /dashboard  -> live usage dashboard (self-contained HTML, open to anyone)
+  /dashboard  -> live usage dashboard (self-contained HTML, open to anyone),
+                 with a Graph tab embedding /graph
+  /graph      -> the interactive node/edge visualization (graphify's own
+                 `graph export html` output, baked into the image as-is;
+                 aggregated community view, since the full 7.8k-node graph
+                 exceeds what's practical to render node-by-node in a browser)
   /stats      -> JSON aggregates powering the dashboard
   /healthz    -> liveness probe
 
@@ -54,6 +59,7 @@ GRAPH_PATH = os.environ.get("GRAPH_PATH", "/app/graph.json")
 DB_PATH = os.environ.get("METRICS_DB", "/data/metrics.db")
 SIZES_PATH = os.environ.get("FILE_SIZES", "/app/file-sizes.json")
 DASH_PATH = os.environ.get("DASHBOARD_HTML", "/app/dashboard.html")
+GRAPH_VIZ_PATH = os.environ.get("GRAPH_VIZ_HTML", "/app/graph-viz.html")
 COST_PATH = os.environ.get("BUILD_COST_JSON", "/app/cost.json")
 MANIFEST_PATH = os.environ.get("CORPUS_MANIFEST", "/app/manifest.json")
 PORT = int(os.environ.get("PORT", "8080"))
@@ -255,6 +261,8 @@ def _respond(send, status, content, ctype="application/json"):
 
 
 DASHBOARD = Path(DASH_PATH).read_text(encoding="utf-8") if Path(DASH_PATH).exists() else "<h1>dashboard.html missing</h1>"
+GRAPH_VIZ = (Path(GRAPH_VIZ_PATH).read_text(encoding="utf-8") if Path(GRAPH_VIZ_PATH).exists()
+             else "<h1>graph-viz.html missing — run `graphify export html` and rebuild the image</h1>")
 
 inner = _build_http_app(GRAPH_PATH, host="0.0.0.0", port=PORT, api_key=API_KEY,
                         path="/mcp", json_response=False, stateless=True,
@@ -270,6 +278,8 @@ async def app(scope, receive, send):
     path = scope.get("path", "/")
     if path in ("/", "/dashboard"):
         return await _respond(send, 200, DASHBOARD, "text/html; charset=utf-8")
+    if path == "/graph":
+        return await _respond(send, 200, GRAPH_VIZ, "text/html; charset=utf-8")
     if path == "/stats":
         data = await asyncio.to_thread(_stats)
         return await _respond(send, 200, json.dumps(data))

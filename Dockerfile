@@ -10,6 +10,7 @@ RUN pip install --no-cache-dir "graphifyy[mcp]==0.9.25"
 
 WORKDIR /app
 COPY graphify-out/graph.json /app/graph.json
+COPY graphify-out/graph.html /app/graph-viz.html
 COPY graphify-out/file-sizes.json /app/file-sizes.json
 COPY graphify-out/cost.json /app/cost.json
 COPY graphify-out/manifest.json /app/manifest.json

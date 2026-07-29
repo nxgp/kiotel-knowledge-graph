@@ -71,56 +71,82 @@
     border: 1px solid var(--border); border-radius: 8px; padding: 6px 9px; font-size: 0.78rem;
     box-shadow: 0 4px 14px rgba(0,0,0,0.18); display: none; z-index: 10; }
   .foot { color: var(--muted); font-size: 0.75rem; margin-top: 18px; }
+  .tabbar { display: flex; gap: 6px; margin: 4px 0 18px; border-bottom: 1px solid var(--grid); }
+  .tabbtn { background: none; border: none; padding: 8px 4px; margin-right: 14px; font: inherit;
+    font-size: 0.88rem; font-weight: 600; color: var(--text-secondary); cursor: pointer;
+    border-bottom: 2px solid transparent; margin-bottom: -1px; }
+  .tabbtn:hover { color: var(--text-primary); }
+  .tabbtn.active { color: var(--text-primary); border-bottom-color: var(--series-1); }
+  .graph-card { padding: 14px; }
+  .graph-card h2 { display: block; }
+  .graph-card h2 .hint { display: block; font-weight: 400; margin-top: 4px; }
 </style>
 </head>
 <body class="viz-root">
 <main>
-  <h1>Kiotel Knowledge Graph — MCP usage</h1>
+  <h1>Kiotel Knowledge Graph</h1>
   <div class="sub" id="sub">loading…</div>
 
-  <div class="tiles" id="tiles"></div>
-
-  <div class="row">
-    <div class="card"><h2>Tool calls by tool</h2><div id="bytool"></div></div>
-    <div class="card"><h2>Tool calls per day (last 14 days)</h2><div id="byday"></div></div>
+  <div class="tabbar" role="tablist">
+    <button class="tabbtn active" id="tabbtn-usage" role="tab" aria-selected="true">Usage</button>
+    <button class="tabbtn" id="tabbtn-graph" role="tab" aria-selected="false">Graph</button>
   </div>
 
-  <div class="row">
-    <div class="card"><h2>Top questions (query_graph)</h2>
-      <table id="queries"><thead><tr><th>question</th><th class="num">asked</th></tr></thead><tbody></tbody></table>
+  <div id="tab-usage">
+    <div class="tiles" id="tiles"></div>
+
+    <div class="row">
+      <div class="card"><h2>Tool calls by tool</h2><div id="bytool"></div></div>
+      <div class="card"><h2>Tool calls per day (last 14 days)</h2><div id="byday"></div></div>
     </div>
-    <div class="card">
-      <h2>Clients <span class="hint">— connecting tool, not the underlying model</span></h2>
-      <table id="clients"><thead><tr><th>client</th><th class="num">requests</th></tr></thead><tbody></tbody></table>
-      <div class="note">MCP's handshake only reports the connecting tool's name/version
-        (e.g. <code>claude-code/2.1</code>) — the protocol never tells the server which LLM
-        is behind it, so that column doesn't exist here rather than being guessed.</div>
+
+    <div class="row">
+      <div class="card"><h2>Top questions (query_graph)</h2>
+        <table id="queries"><thead><tr><th>question</th><th class="num">asked</th></tr></thead><tbody></tbody></table>
+      </div>
+      <div class="card">
+        <h2>Clients <span class="hint">— connecting tool, not the underlying model</span></h2>
+        <table id="clients"><thead><tr><th>client</th><th class="num">requests</th></tr></thead><tbody></tbody></table>
+        <div class="note">MCP's handshake only reports the connecting tool's name/version
+          (e.g. <code>claude-code/2.1</code>) — the protocol never tells the server which LLM
+          is behind it, so that column doesn't exist here rather than being guessed.</div>
+      </div>
     </div>
+
+    <div class="row">
+      <div class="card">
+        <h2>Most-cited source files</h2>
+        <div id="topfiles"></div>
+      </div>
+      <div class="card">
+        <h2>Graph build cost vs. ongoing savings <span class="hint">— tokens, not $</span></h2>
+        <div id="roi"></div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:14px"><h2>Recent activity</h2>
+      <table id="recent"><thead><tr><th>time (UTC)</th><th>tool</th><th>argument</th>
+        <th class="num">ms</th><th class="num">est. tokens saved</th><th></th></tr></thead><tbody></tbody></table>
+    </div>
+
+    <div class="foot">Auto-refreshes every 10s · <b>token savings</b> are an estimate:
+      (size of the source files each answer cites − answer size) ÷ 4, i.e. what an assistant
+      would have read without the graph — no $ rate is assumed anywhere on this page, since
+      that's a business assumption for Kiotel to set, not a fact this server can assert ·
+      <b>build cost</b> (tokens) is the real, non-estimated figure from the actual graphify
+      extraction run · metrics stored locally in the container, reset to zero whenever the
+      graph is rebuilt or the metrics volume is cleared.</div>
   </div>
 
-  <div class="row">
-    <div class="card">
-      <h2>Most-cited source files</h2>
-      <div id="topfiles"></div>
-    </div>
-    <div class="card">
-      <h2>Graph build cost vs. ongoing savings <span class="hint">— tokens, not $</span></h2>
-      <div id="roi"></div>
+  <div id="tab-graph" style="display:none">
+    <div class="card graph-card">
+      <h2>Node / edge visualization <span class="hint">— aggregated community view (411
+        communities); the full 7.8k-node graph is too dense to render node-by-node in a
+        browser, so nodes here are communities and edges are cross-community links</span></h2>
+      <iframe id="graphFrame" title="Kiotel knowledge graph visualization"
+        style="width:100%; height:78vh; border:0; border-radius:8px; display:block; background:#0f0f1a;"></iframe>
     </div>
   </div>
-
-  <div class="card" style="margin-top:14px"><h2>Recent activity</h2>
-    <table id="recent"><thead><tr><th>time (UTC)</th><th>tool</th><th>argument</th>
-      <th class="num">ms</th><th class="num">est. tokens saved</th><th></th></tr></thead><tbody></tbody></table>
-  </div>
-
-  <div class="foot">Auto-refreshes every 10s · <b>token savings</b> are an estimate:
-    (size of the source files each answer cites − answer size) ÷ 4, i.e. what an assistant
-    would have read without the graph — no $ rate is assumed anywhere on this page, since
-    that's a business assumption for Kiotel to set, not a fact this server can assert ·
-    <b>build cost</b> (tokens) is the real, non-estimated figure from the actual graphify
-    extraction run · metrics stored locally in the container, reset to zero whenever the
-    graph is rebuilt or the metrics volume is cleared.</div>
 </main>
 <div id="tip"></div>
 <script>
@@ -233,6 +259,23 @@ document.addEventListener('mousemove', e => {
 });
 refresh();
 setInterval(refresh, 10000);
+
+const tabs = { usage: document.getElementById('tab-usage'), graph: document.getElementById('tab-graph') };
+const tabbtns = { usage: document.getElementById('tabbtn-usage'), graph: document.getElementById('tabbtn-graph') };
+let graphLoaded = false;
+function showTab(name) {
+  for (const k in tabs) {
+    tabs[k].style.display = k === name ? '' : 'none';
+    tabbtns[k].classList.toggle('active', k === name);
+    tabbtns[k].setAttribute('aria-selected', String(k === name));
+  }
+  if (name === 'graph' && !graphLoaded) {
+    graphLoaded = true;
+    document.getElementById('graphFrame').src = '/graph';
+  }
+}
+tabbtns.usage.addEventListener('click', () => showTab('usage'));
+tabbtns.graph.addEventListener('click', () => showTab('graph'));
 </script>
 </body>
 </html>

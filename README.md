@@ -92,11 +92,18 @@ rebuild the Docker image.
 The container ships an observability layer (`mcp/metrics_server.py`) wrapped around the MCP
 server — same `/mcp` protocol, plus:
 
-- **`/dashboard`** — live usage dashboard (open access): tool calls total/today, client
-  sessions, avg calls/session, estimated tokens saved, p50/p95 latency, corpus coverage
-  (distinct files reached by real queries, out of the indexed total), errors, calls by
-  tool, calls per day, top questions asked, most-cited source files, a build-cost-vs-
-  ongoing-savings breakdown, clients, and a recent-activity feed. Auto-refreshes every 10s.
+- **`/dashboard`** — live usage dashboard (open access), two tabs:
+  - **Usage**: tool calls total/today, client sessions, avg calls/session, estimated
+    tokens saved, p50/p95 latency, corpus coverage (distinct files reached by real
+    queries, out of the indexed total), errors, calls by tool, calls per day, top
+    questions asked, most-cited source files, a build-cost-vs-ongoing-savings breakdown,
+    clients, and a recent-activity feed. Auto-refreshes every 10s.
+  - **Graph**: the actual node/edge visualization — graphify's own interactive
+    `graph export html` output, embedded live (lazy-loaded on first click). Aggregated
+    community view (411 communities), since the full 7.8k-node graph is too dense to
+    render node-by-node in a browser; search, click-to-inspect, and the community
+    checklist all work exactly as they do when opening `graphify-out/graph.html` directly.
+- **`/graph`** — that same visualization, servable/linkable on its own.
 - **`/stats`** — the JSON behind the dashboard (feed it to anything else).
 - **`/healthz`** — liveness probe.
 
