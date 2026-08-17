@@ -71,6 +71,37 @@ else
   echo "WARN: hardware source not found at: $HW_SRC — hardware app code will be missing." >&2
 fi
 
+# ---- wave-2 repos (added 2026-08-16): the rest of the Kiotel estate ----
+# One flat folder of repo snapshots; override with NEWREPOS=/path if yours differ.
+NEWREPOS="${NEWREPOS:-$HOME/Documents/kiotel- code}"
+# build-root dir name -> source dir name (clean underscore names keep graph node IDs sane)
+declare -a WAVE2=(
+  "kiotel_space:kiotel-space-main"
+  "kiotel_admin:kiotel-admin-main"
+  "kiotel_portal_front:Kiotel_portal_front-main"
+  "chatbot:chatbot-main"
+  "hr_kiotel_backend:hr_kiotel_backend-main"
+  "kiotel_lox:kiotel_lox-main"
+  "stt_tts_inhouse:stt-tts-inhouse-main"
+  "guest_translation:guest_translation-main"
+  "speech_to_text_serverless:speech-to-text-serverless-main"
+  "kiotel_pms_autofill:kiotel_pms_autofill-master"
+  # service-kiotel-space-calls-main is an empty placeholder (only .gitignore) - skipped
+)
+if [ -d "$NEWREPOS" ]; then
+  for pair in "${WAVE2[@]}"; do
+    dest="${pair%%:*}"; src="${pair#*:}"
+    if [ -d "$NEWREPOS/$src" ]; then
+      say "Copying $dest  ← $NEWREPOS/$src"
+      rsync -a "${EXCLUDES[@]}" "$NEWREPOS/$src/" "$ROOT/$dest/"
+    else
+      echo "WARN: wave-2 repo not found: $NEWREPOS/$src — skipping." >&2
+    fi
+  done
+else
+  echo "WARN: NEWREPOS dir not found at: $NEWREPOS — wave-2 repos skipped." >&2
+fi
+
 # Drop the shared ignore file into the build root.
 cp "$HERE/.graphifyignore" "$ROOT/.graphifyignore"
 

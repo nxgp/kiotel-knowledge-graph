@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Kiotel Estate — 14 Repos, Code-Grounded</title>
+<style>
+  :root {
+    --bg: #f7f7f5; --panel: #ffffff; --ink: #1a1a1a; --muted: #6b6b6b;
+    --line: #d9d9d4; --accent: #0f6b5c; --accent-soft: #e3f0ed;
+    --code-bg: #f0f0ec;
+    --plat: #fdf3e3; --plat-line: #d8b273;
+    --ident: #ece7f7; --ident-line: #a795d6;
+    --staff: #eef2fa; --staff-line: #9db3d8;
+    --guest: #e9f4e7; --guest-line: #8fbb86;
+    --ai:    #fdeef2; --ai-line: #d98aa4;
+    --edge:  #8a8a84;
+    --crit-bg: #fdeaea; --crit-line: #cc6b6b; --crit-ink: #8c2b2b;
+    --warn-bg: #fdf4e3; --warn-line: #d8a848; --warn-ink: #7a5410;
+    --ok-bg: #e8f3e8; --ok-line: #7aab77; --ok-ink: #245c22;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #16181a; --panel: #1f2225; --ink: #e8e6e1; --muted: #9a9a94;
+      --line: #3a3d40; --accent: #5fc4ae; --accent-soft: #1d3833;
+      --code-bg: #26292c;
+      --plat: #37301f; --plat-line: #937b47;
+      --ident: #2b2538; --ident-line: #6f5fa3;
+      --staff: #232c3b; --staff-line: #4d6491;
+      --guest: #24301f; --guest-line: #5f7f57;
+      --ai:    #3a2530; --ai-line: #a4607a;
+      --edge:  #7d7d77;
+      --crit-bg: #3a2424; --crit-line: #a05252; --crit-ink: #f0b8b8;
+      --warn-bg: #352d1a; --warn-line: #9a7a35; --warn-ink: #edd9a8;
+      --ok-bg: #1e2e1e; --ok-line: #4f7a4c; --ok-ink: #b9dfb7;
+    }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink);
+    font: 16px/1.65 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+  main { max-width: 1000px; margin: 0 auto; padding: 40px 24px 90px; }
+  h1 { font-size: 1.85rem; margin: 0 0 6px; letter-spacing: -0.02em; }
+  h2 { font-size: 1.3rem; margin: 50px 0 12px; letter-spacing: -0.01em;
+       padding-bottom: 6px; border-bottom: 1px solid var(--line); }
+  h3 { font-size: 1.02rem; margin: 26px 0 6px; }
+  p.lede { color: var(--muted); margin: 0 0 20px; max-width: 70ch; }
+  .pill { display: inline-block; background: var(--accent-soft); color: var(--accent);
+    border-radius: 20px; padding: 2px 12px; font-size: 0.76rem; font-weight: 600; margin: 0 5px 6px 0; }
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 12px;
+    padding: 16px 20px; margin: 14px 0; }
+  table { width: 100%; border-collapse: collapse; background: var(--panel);
+    border: 1px solid var(--line); border-radius: 10px; overflow: hidden; font-size: 0.87rem; }
+  th, td { text-align: left; padding: 9px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { background: var(--code-bg); font-weight: 600; }
+  tr:last-child td { border-bottom: none; }
+  code { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-size: 0.85em;
+    background: var(--code-bg); border-radius: 4px; padding: 1px 5px; }
+  .diagram-wrap { overflow-x: auto; background: var(--panel); border: 1px solid var(--line);
+    border-radius: 12px; padding: 18px; margin: 14px 0; }
+  svg.arch { display: block; min-width: 900px; max-width: 100%; height: auto; margin: 0 auto; }
+  svg.arch text { font: 12.5px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; fill: var(--ink); }
+  svg.arch text.sm { font-size: 10.5px; fill: var(--muted); }
+  svg.arch text.tag { font-size: 10px; fill: var(--muted); }
+  svg.arch .plat { fill: var(--plat); stroke: var(--plat-line); }
+  svg.arch .ident { fill: var(--ident); stroke: var(--ident-line); stroke-width: 2; }
+  svg.arch .staff { fill: var(--staff); stroke: var(--staff-line); }
+  svg.arch .guest { fill: var(--guest); stroke: var(--guest-line); }
+  svg.arch .ai { fill: var(--ai); stroke: var(--ai-line); }
+  svg.arch .edge { stroke: var(--edge); stroke-width: 1.4; fill: none; marker-end: url(#a1); }
+  svg.arch .edge.auth { stroke: var(--ident-line); stroke-width: 2; }
+  .repo { border-left: 3px solid var(--accent); }
+  .repo h3 { margin-top: 0; }
+  .meta { color: var(--muted); font-size: 0.8rem; margin: 0 0 10px; }
+  .kv { font-size: 0.87rem; margin: 6px 0; }
+  .kv b { color: var(--muted); font-weight: 600; }
+  ul.tight { margin: 6px 0; padding-left: 20px; }
+  ul.tight li { margin: 3px 0; font-size: 0.88rem; }
+  .flag { border-radius: 9px; padding: 10px 14px; margin: 8px 0; font-size: 0.87rem; }
+  .flag.crit { background: var(--crit-bg); border: 1px solid var(--crit-line); }
+  .flag.crit b { color: var(--crit-ink); }
+  .flag.warn { background: var(--warn-bg); border: 1px solid var(--warn-line); }
+  .flag.warn b { color: var(--warn-ink); }
+  .flag.ok { background: var(--ok-bg); border: 1px solid var(--ok-line); }
+  .flag.ok b { color: var(--ok-ink); }
+  .foot { color: var(--muted); font-size: 0.8rem; margin-top: 56px;
+    border-top: 1px solid var(--line); padding-top: 16px; }
+  .legend { display: flex; flex-wrap: wrap; gap: 14px; font-size: 0.78rem; color: var(--muted); margin-top: 10px; }
+  .legend i { display: inline-block; width: 11px; height: 11px; border-radius: 3px; margin-right: 5px; vertical-align: -1px; }
+</style>
+</head>
+<body>
+<main>
+  <h1>The Kiotel Estate</h1>
+  <p class="lede">All 14 Kiotel repositories — what each one actually does, how it runs, and how
+  they connect. Every claim below was derived by reading the <b>real code</b> (entry points,
+  routes, services, DB access, config), not READMEs; where a README contradicts the code, the
+  code wins and the discrepancy is flagged.</p>
+  <div>
+    <span class="pill">14 repos</span>
+    <span class="pill">~2,300 source files</span>
+    <span class="pill">4 previously mapped · 10 newly added</span>
+    <span class="pill">read 2026-08-16</span>
+  </div>
+
+  <h2>1 · The estate at a glance</h2>
+  <p>Kiotel is not one system — it is <b>five product families</b> that share a brand, a domain,
+  and (increasingly) an identity provider:</p>
+  <table>
+    <tr><th>Family</th><th>Repos</th><th>What it is</th></tr>
+    <tr><td><b>Guest-facing kiosk</b></td>
+        <td><code>kiotel_hardware</code>, <code>kiotel_web</code>, <code>kiotel_pms_autofill</code></td>
+        <td>The lobby self-check-in kiosk, the platform hub that drives it, and a Chrome extension that autofills guest data into PMS screens</td></tr>
+    <tr><td><b>Property management</b></td>
+        <td><code>kiotel-pms</code>, <code>kiotel_lox</code></td>
+        <td>Rooms/rates/reservations/folio, plus the door-key encoding subsystem</td></tr>
+    <tr><td><b>Identity &amp; admin</b></td>
+        <td><code>kiotel-admin</code></td>
+        <td><b>The new centre of gravity</b> — a real IdP (EdDSA JWTs, JWKS, MFA, RBAC) for the whole suite</td></tr>
+    <tr><td><b>Internal staff tools</b></td>
+        <td><code>kiotel-space</code>, <code>Kiotel_portal_front</code>, <code>hr_kiotel_backend</code></td>
+        <td>Staff workspace (chat/tasks), company portal, HR/attendance backend</td></tr>
+    <tr><td><b>Speech &amp; AI</b></td>
+        <td><code>audio_services</code>, <code>chatbot</code>, <code>stt-tts-inhouse</code>, <code>guest_translation</code>, <code>speech-to-text-serverless</code></td>
+        <td>Call recording + AI audit, a support chatbot, and <b>three separate in-house STT/translation services</b></td></tr>
+  </table>
+
+  <h2>2 · How they connect</h2>
+  <div class="diagram-wrap">
+  <svg class="arch" viewBox="0 0 920 620" xmlns="http://www.w3.org/2000/svg" role="img"
+       aria-label="Architecture: kiotel-admin is the identity provider for kiotel-space and kiotel-lox; kiotel_web is the data hub that kiosk, space, portal, autofill and chatbot all read from">
+    <defs>
+      <marker id="a1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+        <path d="M0,0 L10,5 L0,10 z" fill="currentColor" opacity="0.7"/>
+      </marker>
+    </defs>
+
+    <!-- identity -->
+    <rect class="ident" x="330" y="18" width="255" height="64" rx="10"/>
+    <text x="457" y="44" text-anchor="middle" font-weight="700">kiotel-admin — admin.kiotel.co</text>
+    <text x="457" y="63" text-anchor="middle" class="sm">IdP: EdDSA JWTs · JWKS · MFA · RBAC · service tokens</text>
+
+    <path class="edge auth" style="color:var(--ident-line)" d="M395,82 L215,150"/>
+    <path class="edge auth" style="color:var(--ident-line)" d="M520,82 L700,150"/>
+    <text x="238" y="118" class="tag">issues JWT / authz</text>
+    <text x="600" y="118" class="tag">HMAC admin API</text>
+
+    <!-- staff workspace -->
+    <rect class="staff" x="60" y="152" width="240" height="82" rx="10"/>
+    <text x="180" y="176" text-anchor="middle" font-weight="700">kiotel-space — space.kiotel.co</text>
+    <text x="180" y="194" text-anchor="middle" class="sm">staff chat · tasks · updates (Prisma/PG17)</text>
+    <text x="180" y="212" text-anchor="middle" class="sm">BFF: tokens never reach the browser</text>
+    <text x="180" y="228" text-anchor="middle" class="sm">+ read-only Kiosk Transaction module</text>
+
+    <!-- lox -->
+    <rect class="guest" x="640" y="152" width="230" height="82" rx="10"/>
+    <text x="755" y="176" text-anchor="middle" font-weight="700">kiotel_lox — lox.kiotel.co</text>
+    <text x="755" y="194" text-anchor="middle" class="sm">Go API + .NET Windows agent</text>
+    <text x="755" y="212" text-anchor="middle" class="sm">door-key encoding (SPLUS / LockGuru)</text>
+    <text x="755" y="228" text-anchor="middle" class="sm">own PG+Redis · fully separate stack</text>
+
+    <!-- platform hub -->
+    <rect class="plat" x="300" y="270" width="320" height="92" rx="10"/>
+    <text x="460" y="296" text-anchor="middle" font-weight="700">kiotel_web — kioteldashboard.kiotel.co</text>
+    <text x="460" y="314" text-anchor="middle" class="sm">THE DATA HUB · Express + Knex + Socket.IO</text>
+    <text x="460" y="332" text-anchor="middle" class="sm">'kiosk' Postgres: t_sessions · id_scanjobs · session_ai_audit</text>
+    <text x="460" y="350" text-anchor="middle" class="sm">partner API /api/v1/external (kio_ bearer tokens)</text>
+
+    <path class="edge" style="color:var(--edge)" d="M180,234 L380,268"/>
+    <text x="196" y="258" class="tag">kio_ token → transaction reports</text>
+
+    <!-- kiosk -->
+    <rect class="guest" x="60" y="400" width="240" height="76" rx="10"/>
+    <text x="180" y="424" text-anchor="middle" font-weight="700">kiotel_hardware</text>
+    <text x="180" y="442" text-anchor="middle" class="sm">lobby kiosk (.NET + WebView2)</text>
+    <text x="180" y="460" text-anchor="middle" class="sm">Socket.IO RELAY commands ↕ telemetry</text>
+    <path class="edge" style="color:var(--edge)" d="M300,398 L180,400" transform="translate(0,0)"/>
+    <path class="edge" style="color:var(--edge)" d="M330,362 L215,398"/>
+
+    <!-- pms -->
+    <rect class="guest" x="330" y="400" width="255" height="76" rx="10"/>
+    <text x="457" y="424" text-anchor="middle" font-weight="700">kiotel-pms</text>
+    <text x="457" y="442" text-anchor="middle" class="sm">rooms · rates · reservations · folio</text>
+    <text x="457" y="460" text-anchor="middle" class="sm">own DB + own auth (most independent)</text>
+    <path class="edge" style="color:var(--edge)" d="M460,362 L458,398"/>
+
+    <!-- autofill -->
+    <rect class="guest" x="620" y="400" width="250" height="76" rx="10"/>
+    <text x="745" y="424" text-anchor="middle" font-weight="700">kiotel_pms_autofill</text>
+    <text x="745" y="442" text-anchor="middle" class="sm">Chrome MV3 extension · OAuth2 PKCE</text>
+    <text x="745" y="460" text-anchor="middle" class="sm">copies guest data → any PMS screen</text>
+    <path class="edge" style="color:var(--edge)" d="M600,340 L680,398"/>
+
+    <!-- ai row -->
+    <rect class="ai" x="60" y="512" width="240" height="76" rx="10"/>
+    <text x="180" y="536" text-anchor="middle" font-weight="700">audio_services</text>
+    <text x="180" y="554" text-anchor="middle" class="sm">records + AI-audits every call</text>
+    <text x="180" y="572" text-anchor="middle" class="sm">→ posts into session_ai_audit</text>
+    <path class="edge" style="color:var(--edge)" d="M240,512 L330,364"/>
+
+    <rect class="ai" x="330" y="512" width="255" height="76" rx="10"/>
+    <text x="457" y="536" text-anchor="middle" font-weight="700">chatbot</text>
+    <text x="457" y="554" text-anchor="middle" class="sm">LangGraph support bot · NL→SQL</text>
+    <text x="457" y="572" text-anchor="middle" class="sm">reads the kiosk DB read-only</text>
+    <path class="edge" style="color:var(--edge)" d="M457,512 L459,364"/>
+
+    <rect class="ai" x="620" y="512" width="250" height="76" rx="10"/>
+    <text x="745" y="536" text-anchor="middle" font-weight="700">3 × in-house STT/translate</text>
+    <text x="745" y="554" text-anchor="middle" class="sm">stt-tts-inhouse · guest_translation</text>
+    <text x="745" y="572" text-anchor="middle" class="sm">speech-to-text-serverless (RunPod)</text>
+
+    <!-- portal family -->
+    <rect class="staff" x="640" y="270" width="230" height="92" rx="10"/>
+    <text x="755" y="294" text-anchor="middle" font-weight="700">portal.kiotel.co</text>
+    <text x="755" y="312" text-anchor="middle" class="sm">Kiotel_portal_front (Next + Flask)</text>
+    <text x="755" y="330" text-anchor="middle" class="sm">hr_kiotel_backend (Express + MySQL)</text>
+    <text x="755" y="350" text-anchor="middle" class="sm">helpdesk · HR · attendance · careers</text>
+    <path class="edge" style="color:var(--edge)" d="M640,316 L622,316"/>
+  </svg>
+  <div class="legend">
+    <span><i style="background:var(--ident);border:1px solid var(--ident-line)"></i>identity</span>
+    <span><i style="background:var(--plat);border:1px solid var(--plat-line)"></i>data hub</span>
+    <span><i style="background:var(--staff);border:1px solid var(--staff-line)"></i>staff tools</span>
+    <span><i style="background:var(--guest);border:1px solid var(--guest-line)"></i>guest / property</span>
+    <span><i style="background:var(--ai);border:1px solid var(--ai-line)"></i>speech &amp; AI</span>
+  </div>
+  </div>
+
+  <div class="card">
+  <h3>The two centres of gravity</h3>
+  <p><b>kiotel-admin is the identity authority.</b> It owns users, orgs, products, roles and every
+  permission string in the suite (<code>backend/src/rbac/constants.ts</code>, ~1000 lines), signs
+  EdDSA JWTs published at <code>/.well-known/jwks.json</code>, and issues <code>svc_</code>
+  service tokens. kiotel-space delegates <em>all</em> auth to it; kiotel_lox trusts its
+  HMAC-signed admin calls. This is the single most important thing the old 4-repo graph was
+  missing.</p>
+  <p><b>kiotel_web remains the data hub.</b> Its <code>/api/v1/external</code> partner API and its
+  <code>kiosk</code> Postgres are consumed by kiotel-space (transaction reports), the portal
+  (session reports, housekeeping tasks), the autofill extension (live guest rows), and the
+  chatbot (read-only NL→SQL). Everything guest-related still flows through it.</p>
+  </div>
+
+  <h2>3 · The repos</h2>
+
+  <div class="card repo">
+    <h3>kiotel-admin <span class="meta">— admin.kiotel.co · 281 code files</span></h3>
+    <div class="kv"><b>What it is:</b> Central identity provider + admin console ("Kiotel Auth")
+      for the whole suite. Owns users, organizations, products, roles/permissions, sessions;
+      issues EdDSA (Ed25519) JWTs for three registered products.</div>
+    <div class="kv"><b>Stack:</b> Fastify + TypeScript (ESM), Prisma on PostgreSQL 18 behind
+      pgbouncer, Redis + BullMQ workers, Next.js App Router dashboard (BFF pattern).</div>
+    <div class="kv"><b>Entry:</b> <code>backend/src/server.ts</code> (:5001) ·
+      <code>backend/src/worker.ts</code> · <code>frontend/app/layout.tsx</code> (:3001)</div>
+    <div class="kv"><b>Runs:</b> Docker Compose with hardened containers
+      (<code>cap_drop ALL</code>, <code>read_only</code>, <code>no-new-privileges</code>).</div>
+    <div class="kv"><b>Auth model:</b> BFF sessions (browser holds only an opaque cookie);
+      trusted-peer S2S gate = loopback OR <code>x-internal-secret</code> OR DB-managed IP
+      allowlist; service tokens scoped <code>svc_&lt;productCode&gt;</code>.</div>
+    <div class="flag warn"><b>Naming trap:</b> its <code>x-internal-secret</code> header collides
+      with kiotel_web's Python-sidecar <code>X-Internal-Secret</code> mechanism but carries a
+      different secret for a different purpose. Also, <code>DASHBOARD_CLIENT_SECRET</code> is
+      dual-purpose: the BFF's session secret <em>and</em> the universal trusted-peer bypass.</div>
+  </div>
+
+  <div class="card repo">
+    <h3>kiotel-space <span class="meta">— space.kiotel.co · 351 code files (largest)</span></h3>
+    <div class="kv"><b>What it is:</b> Internal staff workspace: encrypted team chat (groups, DMs,
+      pins, stars, reminders), tasks with recurrence/checklists/watchers, property-scoped
+      announcements, departments, web-push. Plus a read-only <b>Kiosk Transaction</b> module that
+      proxies kiotel_web's partner API behind per-user, per-device permission checks.</div>
+    <div class="kv"><b>Stack:</b> Express 5 + Socket.IO (Redis adapter), Prisma on PostgreSQL 17
+      (<b>37 models</b>), Redis 8, BullMQ workers (transcode/push/reminder), tus resumable uploads
+      to MinIO + ffmpeg, Next.js PWA frontend.</div>
+    <div class="kv"><b>Entry:</b> <code>backend/src/server.ts</code> ·
+      <code>backend/src/app.ts</code> · <code>backend/prisma/schema.prisma</code> (929 lines)</div>
+    <div class="kv"><b>Connects to:</b> kiotel-admin (all auth, session-freshness checks every
+      30s/60s, inbound revocation), kiotel_web partner API (<code>Bearer KIOSK_API_TOKEN</code>),
+      the kiosk object store (HMAC-signed expiring media refs).</div>
+    <div class="flag ok"><b>Good pattern:</b> <code>kiosk.media.ts</code> wraps public CDN URLs in
+      HMAC-SHA256 signed expiring references so raw guest-ID-scan URLs never reach the browser.</div>
+    <div class="flag warn"><b>Two weaknesses:</b> chat messages use AES-256-<b>CBC</b> with no
+      auth tag (confidentiality only — ciphertext is malleable; AES-GCM would be correct), and
+      <code>KIOSK_API_TOKEN</code> is a single static bearer granting read access to every device
+      on its allowlist — per-user scoping exists only inside this backend.</div>
+  </div>
+
+  <div class="card repo">
+    <h3>kiotel_lox <span class="meta">— lox.kiotel.co · 47 code files</span></h3>
+    <div class="kv"><b>What it is:</b> Hotel key-card encoding. A Go API licenses Windows devices,
+      keeps a per-device encrypted key-encoder registry, and relays
+      <code>make_key</code>/<code>delete_key</code>/<code>read_key</code> commands over WebSocket
+      to a .NET tray agent, which drives SPLUS (HTTP) or LockGuru (file-drop) encoders.</div>
+    <div class="kv"><b>Stack:</b> Go (chi, pgx/sqlc, rueidis, goose) on PostgreSQL 18 + pgbouncer +
+      Redis 8; .NET WinForms Windows agent.</div>
+    <div class="kv"><b>Entry:</b> <code>backend/cmd/server/main.go</code> (:8080) ·
+      <code>kiotel_lox_application/Program.cs</code></div>
+    <div class="flag ok"><b>Best security posture in the estate:</b> HMAC-signed admin requests
+      <em>and</em> responses with Redis nonce replay protection, AES-GCM (HKDF-derived) encryption
+      of vendor config, hardware-fingerprint device licensing with admin re-approval on change,
+      and an admin API deliberately unreachable from the internet (nginx returns 444).</div>
+    <div class="kv"><b>Note:</b> fully separate stack — no Socket.IO, no <code>kio_</code> tokens,
+      no platform DB. Only shares the <code>kiotel.co</code> domain and the Spaces bucket.</div>
+  </div>
+
+  <div class="card repo">
+    <h3>chatbot <span class="meta">— 99 code files</span></h3>
+    <div class="kv"><b>What it is:</b> Multi-service AI support chatbot. A FastAPI portal runs a
+      LangGraph pipeline (guardrails → L1/L2 semantic cache → LLM classify-and-route → tools),
+      with three backing services: a RAG step-guide, a NL→SQL "customer module" (Vanna), and a
+      doc-chat service.</div>
+    <div class="kv"><b>Stack:</b> Python 3.11 / FastAPI ×4, LangGraph + LangChain, DigitalOcean
+      Gradient AI inference, Ollama (<code>qwen2.5:1.5b</code>) as a free local model with
+      circuit-breaker fallback to the paid LLM, PostgreSQL 16 + pgvector.</div>
+    <div class="flag crit"><b>Authorization is self-declared.</b> <code>user_role</code> and
+      <code>device_id</code> come from client-supplied request metadata
+      (<code>portals/kiotel_chatbot/main.py:219-227</code>), so any holder of the single shared
+      <code>API_TOKEN</code> can claim any role. The doc-chat service documents its own gate as
+      "not real auth".</div>
+    <div class="flag crit"><b>NL→SQL reaches sensitive tables.</b> The trained schema
+      (<code>services/customer_module/schema/schema_context.json</code>) includes
+      <code>app_secrets</code>, <code>device_oauth</code>, <code>ext_oauth_codes</code>,
+      <code>external_api_clients</code>. The guard
+      (<code>sql_guard.py</code>) is regex-based, not a SQL parser — defense rests on the
+      read-only role and statement timeout.</div>
+  </div>
+
+  <div class="card repo">
+    <h3>Kiotel_portal_front <span class="meta">— portal.kiotel.co · 208 code files</span></h3>
+    <div class="kv"><b>What it is:</b> Internal company portal — helpdesk tickets, task manager, HR
+      (face-recognition attendance), plus customer-facing kiosk transaction views.</div>
+    <div class="kv"><b>Stack:</b> Next.js 14 (App Router) + React 18 + Tailwind/MUI +
+      <code>face-api.js</code>, backed by a <b>5,400-line legacy Flask monolith</b> (96 routes).</div>
+    <div class="kv"><b>Runs:</b> two pm2 processes, no Docker.</div>
+    <div class="flag crit"><b>The worst secret-hygiene in the estate — all committed to git:</b>
+      hardcoded MySQL credentials for <code>64.227.6.9</code>
+      (<code>server/server.py:66-71, :83-86</code>); a second DB connection string with password
+      (<code>server/models.py:6</code>); a real-looking 96-hex-char <code>JWT_SECRET</code> shared
+      with the Node backend (<code>server.py:100</code>); a Gmail SMTP app password
+      (<code>server.py:2782</code>); and a trivial Flask <code>SECRET_KEY</code>
+      (<code>'abcdefghij...'</code>, <code>server.py:49</code>). Login compares passwords in
+      plaintext (<code>server.py:346</code>). <b>Rotate all of these.</b></div>
+  </div>
+
+  <div class="card repo">
+    <h3>hr_kiotel_backend <span class="meta">— 78 code files</span></h3>
+    <div class="kv"><b>What it is:</b> Express backend for the HR/employee portal + careers site:
+      attendance and clock-in/out with face recognition, shift scheduling, leave, inventory,
+      tasks, careers applications.</div>
+    <div class="kv"><b>Stack:</b> Node (CommonJS) + Express 4 + Socket.IO, MySQL via two pools
+      (<code>hr_management</code> and the <code>kiotel</code> DB), DigitalOcean Spaces, Google
+      Sheets, PM2.</div>
+    <div class="flag crit"><b>Authentication is effectively broken:</b> passwords are compared in
+      <b>plaintext</b> (<code>routes/auth_v2.js:75</code> — the file's own header admits it);
+      legacy <code>/admin/login</code> and <code>/employee/login</code> authenticate by
+      <code>unique_id</code> alone and return the entire DB row; and
+      <code>middleware/inventoryAuth.js</code> grants identity and admin/manager roles purely from
+      client-sent <code>x-user-id</code> / <code>x-user-role</code> headers. JWT falls back to
+      <code>"CHANGE_ME_dev_secret"</code> if the env var is missing.</div>
+  </div>
+
+  <div class="card repo">
+    <h3>kiotel_pms_autofill <span class="meta">— Chrome MV3 extension · 5 code files</span></h3>
+    <div class="kv"><b>What it is:</b> Links a browser to a Kiotel device via OAuth2 PKCE against
+      the platform, pulls the active kiosk session's guest rows, and autofills them into any PMS
+      screen (field-mapping picker, MutationObserver UI, Alt+I/Alt+N hotkeys).</div>
+    <div class="kv"><b>Auth:</b> OAuth2 authorization-code + PKCE (S256) via
+      <code>chrome.identity.launchWebAuthFlow</code>, bearer device token in
+      <code>chrome.storage.local</code>, hourly re-verification, extension ID pinned by RSA key.</div>
+    <div class="flag warn"><b>Very broad footprint by design:</b> content script runs on
+      <code>&lt;all_urls&gt;</code>, all frames — guest PII passes through every page the user
+      visits. Distribution is self-hosted (enterprise force-install), not the Chrome Web Store.</div>
+    <div class="flag warn"><b>README is stale:</b> it claims "autofill logic is not implemented
+      yet — this version handles the auth link only", but <code>scripts/content.js</code> is a
+      fully implemented 1,673-line engine.</div>
+  </div>
+
+  <div class="card repo">
+    <h3>The three in-house speech services <span class="meta">— an unconsolidated family</span></h3>
+    <p style="margin:4px 0 10px">All three do overlapping work and <b>none of them talk to the
+    Kiotel platform</b>. They appear to be successive attempts at replacing Deepgram:</p>
+    <table>
+      <tr><th>Repo</th><th>What it does</th><th>Deploy</th><th>Auth</th></tr>
+      <tr><td><code>stt-tts-inhouse</code></td>
+          <td>Full pipeline: Silero VAD → faster-whisper streaming → MarianMT translate → Piper TTS</td>
+          <td>Docker Compose ×3 (Caddy on <code>174.138.67.251:8443</code>)</td>
+          <td class="crit-ink"><b>none</b> + CORS <code>*</code></td></tr>
+      <tr><td><code>guest_translation</code></td>
+          <td>Streaming transcribe + translate (Silero VAD + faster-whisper + MarianMT)</td>
+          <td>bare uvicorn :8000</td>
+          <td class="crit-ink"><b>none</b> + CORS <code>*</code></td></tr>
+      <tr><td><code>speech-to-text-serverless</code></td>
+          <td>GPU batch STT + speaker diarization (whisper large-v3-turbo + sherpa-onnx)</td>
+          <td>RunPod serverless GPU</td>
+          <td>RunPod platform key</td></tr>
+    </table>
+    <div class="flag warn"><b>Consolidation opportunity:</b> <code>stt-tts-inhouse</code> and
+      <code>guest_translation</code> are near-duplicates (same VAD, same STT engine, same
+      MarianMT pairs). Two unauthenticated GPU-heavy services are publicly reachable.</div>
+    <div class="flag ok"><b>Genuinely clean:</b> <code>speech-to-text-serverless</code> has no
+      secrets and unusually thorough SSRF hardening in <code>src/audio.py</code> (https-only, DNS
+      resolved then private/loopback/link-local ranges rejected).</div>
+  </div>
+
+  <h2>4 · Cross-cutting findings</h2>
+
+  <h3>Security — ranked by urgency</h3>
+  <div class="flag crit"><b>1. Committed production credentials</b> —
+    <code>Kiotel_portal_front/server/server.py</code> and <code>models.py</code> carry live DB
+    passwords, a shared JWT secret, and an SMTP app password in git history. Rotate every one and
+    purge/rewrite history. (The previously-known hardcoded Deepgram key in
+    <code>audio_services/stt-tts-using-api-only/app/config.py:6</code> is still outstanding too.)</div>
+  <div class="flag crit"><b>2. Plaintext passwords + header-trust auth</b> —
+    <code>hr_kiotel_backend</code> and the portal's Flask backend compare passwords in plaintext;
+    inventory routes trust client-sent role headers. Anyone who can reach the API can self-elevate.</div>
+  <div class="flag crit"><b>3. Self-declared roles in the chatbot</b> — one shared API token plus
+    client-supplied <code>user_role</code> governs access to an NL→SQL tool whose schema includes
+    <code>app_secrets</code> and OAuth tables.</div>
+  <div class="flag warn"><b>4. Unauthenticated public speech services</b> — two GPU services with
+    open WebSockets and wildcard CORS.</div>
+  <div class="flag warn"><b>5. Public guest-ID media</b> — kiotel-space's code documents that the
+    platform serves guest ID scans, camera captures and signed PDFs as <b>public</b> CDN objects;
+    anyone with the raw URL can fetch them. kiotel-space mitigates locally with signed refs, but
+    the underlying objects stay public.</div>
+  <div class="flag ok"><b>Bright spots:</b> kiotel_lox (HMAC + AES-GCM + nonce replay protection),
+    kiotel-admin (hardened containers, rotating EdDSA keys, HIBP breach checks), kiotel-space's
+    BFF pattern (tokens never reach the browser), and the autofill extension's OAuth2 PKCE.</div>
+
+  <h3>Architectural observations</h3>
+  <ul class="tight">
+    <li><b>Auth is mid-migration.</b> kiotel-admin is a proper IdP, but only kiotel-space and
+      kiotel_lox use it. The portal/HR family still runs its own plaintext-password auth, and
+      kiotel_web/kiotel-pms have their own schemes. Three generations coexist.</li>
+    <li><b>Four separate database families:</b> platform Postgres (<code>kiosk</code>), PMS
+      Postgres, admin/space Postgres 17/18, and the portal/HR <b>MySQL</b> pair — plus a
+      Bluehost-hosted MySQL from an older product.</li>
+    <li><b>Everything shares one storage bucket</b> (<code>kiotel-space</code> on DigitalOcean
+      Spaces): platform media, lox DB backups, admin DB backups, HR attendance photos.</li>
+    <li><b>Two subdomains the graph never knew about:</b> <code>admin.kiotel.co</code> and
+      <code>space.kiotel.co</code>, alongside <code>portal.kiotel.co</code>,
+      <code>careers.kiotel.co</code> and <code>lox.kiotel.co</code>.</li>
+    <li><b>Referenced but absent:</b> a Node backend at <code>api.kiotel.co</code> (the portal's
+      newer backend) and a standalone Python face-recognition service — neither is in any of the
+      14 repos. The estate is not yet fully enumerated.</li>
+  </ul>
+
+  <h3>Docs vs. code discrepancies found</h3>
+  <ul class="tight">
+    <li><code>kiotel_pms_autofill</code> README says autofill is unimplemented; it is fully built.</li>
+    <li><code>audio_services/stt-tts-using-api-only</code> README claims ElevenLabs Scribe; the
+      code uses Deepgram nova-3 exclusively.</li>
+    <li><code>guest_translation</code> declares a <code>max_ws_connections=50</code> limit that is
+      never enforced anywhere in the code.</li>
+    <li><code>stt-tts-inhouse</code> error messages reference a <code>/languages</code> endpoint
+      and response schemas that no longer exist.</li>
+  </ul>
+
+  <div class="foot">Method: 11 parallel deep-read agents, each given entry points and told to
+  follow real code paths (routes, services, socket handlers, DB access, config) and to grep for
+  cross-system markers — every cross-repo connection above carries a file + verbatim evidence
+  line in the underlying findings. Secret <em>locations</em> are reported; secret <em>values</em>
+  are never reproduced. Companion docs: <code>mcp-architecture.html</code> (how the graph is
+  served), <code>synxis-integration-plan.html</code>, <code>automation-plan.html</code>.
+  Generated 2026-08-16.</div>
+</main>
+</body>
+</html>
