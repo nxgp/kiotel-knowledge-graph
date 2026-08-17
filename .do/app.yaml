@@ -1,32 +1,41 @@
 # DigitalOcean App Platform spec for the Kiotel knowledge-graph MCP server.
-# Deploys the Docker image pushed to the team's DO Container Registry (DOCR).
 #
-#   doctl registry create kiotel --region nyc3        # one-time, if no registry yet
-#   doctl registry login
-#   docker tag kiotel-graph-mcp registry.digitalocean.com/kiotel/kiotel-graph-mcp:latest
-#   docker push registry.digitalocean.com/kiotel/kiotel-graph-mcp:latest
-#   doctl apps create --spec .do/app.yaml             # first deploy
-#   doctl apps update <app-id> --spec .do/app.yaml    # subsequent deploys
+# Builds the image straight from the GitHub repo's Dockerfile — no container
+# registry, no manual image push. App Platform rebuilds + redeploys on every
+# push to `main`, terminates TLS automatically, and gives a stable URL:
+#     https://<app-name>-<hash>.ondigitalocean.app
+# The MCP endpoint is that URL + /mcp; the dashboard is + /dashboard.
 #
-# App Platform terminates TLS automatically → https://<app>.ondigitalocean.app/mcp
+# Deploy (either path):
+#   A) Console: Create → Apps → GitHub → nxgp/kiotel-knowledge-graph → it
+#      detects this spec automatically. Review, Create.
+#   B) CLI:  doctl auth init          # one-time, needs a DO API token
+#            doctl apps create --spec .do/app.yaml
+#            doctl apps update <app-id> --spec .do/app.yaml   # later deploys
 name: kiotel-graph-mcp
 region: nyc
 services:
   - name: mcp
-    image:
-      registry_type: DOCR
-      registry: kiotel
-      repository: kiotel-graph-mcp
-      tag: latest
+    github:
+      repo: nxgp/kiotel-knowledge-graph
+      branch: main
+      deploy_on_push: true
+    dockerfile_path: Dockerfile
     http_port: 8080
     instance_count: 1
-    instance_size_slug: basic-xxs   # graph is in-memory; 512MB is plenty for 7.8k nodes
+    # The 16k-node graph loads fully into memory (NetworkX). basic-xs (1 GB)
+    # has comfortable headroom; basic-xxs (512 MB) may work but is tight —
+    # start at xs, drop to xxs later if memory sits low.
+    instance_size_slug: basic-xs
     health_check:
+      # /healthz returns 200 (unlike /mcp, which 4xx's a bare GET).
       port: 8080
-      http_path: /mcp
-      # /mcp answers 4xx to bare GETs — any HTTP response marks the port healthy enough;
-      # if the platform treats 4xx as failure, switch to a TCP check in the console.
-    # To require auth for non-claude.ai clients (Claude Code / Cursor send headers):
+      http_path: /healthz
+      initial_delay_seconds: 20   # allow time to load the 18 MB graph.json
+      period_seconds: 30
+    # OPTIONAL — require a key for Claude Code / Cursor (they send headers).
+    # LEAVE OFF if you want the claude.ai custom connector to work, since
+    # claude.ai connectors cannot send a static Authorization header.
     # envs:
     #   - key: GRAPHIFY_API_KEY
     #     scope: RUN_TIME
