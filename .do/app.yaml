@@ -1,41 +1,40 @@
-# DigitalOcean App Platform spec for the Kiotel knowledge-graph MCP server.
+# DigitalOcean App Platform spec — Kiotel knowledge-graph MCP server.
 #
-# Builds the image straight from the GitHub repo's Dockerfile — no container
-# registry, no manual image push. App Platform rebuilds + redeploys on every
-# push to `main`, terminates TLS automatically, and gives a stable URL:
-#     https://<app-name>-<hash>.ondigitalocean.app
-# The MCP endpoint is that URL + /mcp; the dashboard is + /dashboard.
+# Deploys from the DO Container Registry (DOCR) image. We use DOCR rather than
+# a GitHub-source build because App Platform's GitHub build needs a browser
+# OAuth link that can't be automated, and the registry path is fully scriptable.
 #
-# Deploy (either path):
-#   A) Console: Create → Apps → GitHub → nxgp/kiotel-knowledge-graph → it
-#      detects this spec automatically. Review, Create.
-#   B) CLI:  doctl auth init          # one-time, needs a DO API token
-#            doctl apps create --spec .do/app.yaml
-#            doctl apps update <app-id> --spec .do/app.yaml   # later deploys
+# Deploy / update:  ./scripts/deploy-do.sh   (see that script — it builds the
+# image for linux/amd64, pushes to DOCR, and rolls a new deployment)
+#
+# CRITICAL: the image MUST be built for linux/amd64. App Platform runs amd64;
+# an arm64 image (the default when built on an Apple-Silicon Mac) crashes at
+# startup with "exec format error". deploy-do.sh handles this with buildx.
+#
+# Live: https://kiotel-graph-mcp-rmevc.ondigitalocean.app  (/mcp · /dashboard)
+# App ID: 5063fd52-c7eb-4db8-a82c-0d9b3c291b4f
 name: kiotel-graph-mcp
 region: nyc
 services:
   - name: mcp
-    github:
-      repo: nxgp/kiotel-knowledge-graph
-      branch: main
-      deploy_on_push: true
-    dockerfile_path: Dockerfile
+    image:
+      registry_type: DOCR
+      repository: kiotel-graph-mcp
+      tag: latest
     http_port: 8080
     instance_count: 1
-    # The 16k-node graph loads fully into memory (NetworkX). basic-xs (1 GB)
-    # has comfortable headroom; basic-xxs (512 MB) may work but is tight —
-    # start at xs, drop to xxs later if memory sits low.
+    # The 16k-node graph loads fully into memory (NetworkX). basic-xs = 1 GB,
+    # comfortable headroom. Drop to basic-xxs (512 MB) later if memory sits low.
     instance_size_slug: basic-xs
     health_check:
       # /healthz returns 200 (unlike /mcp, which 4xx's a bare GET).
       port: 8080
       http_path: /healthz
-      initial_delay_seconds: 20   # allow time to load the 18 MB graph.json
+      initial_delay_seconds: 20
       period_seconds: 30
     # OPTIONAL — require a key for Claude Code / Cursor (they send headers).
-    # LEAVE OFF if you want the claude.ai custom connector to work, since
-    # claude.ai connectors cannot send a static Authorization header.
+    # LEAVE OFF for the claude.ai custom connector (it cannot send a static
+    # Authorization header). Set via: doctl apps update <id> --spec, or console.
     # envs:
     #   - key: GRAPHIFY_API_KEY
     #     scope: RUN_TIME
