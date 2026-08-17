@@ -10,3 +10,6 @@ graphify-out/cache/
 __pycache__/
 *.pyc
 metrics-data/
+
+# deep-read intermediate artifacts (regenerable)
+graphify-out/.deep_read_*.json

@@ -26,6 +26,11 @@ from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
 BRIDGES = json.loads((HERE / "bridges.json").read_text(encoding="utf-8"))["bridges"]
+# Cross-repo bridges from the 15-agent deep-read (verified file+line evidence).
+# These join the 14 repos into one queryable component. Strip the _-prefixed
+# annotation keys before use (they document the evidence, not graph fields).
+_XREPO = json.loads((HERE / "cross-repo-bridges.json").read_text(encoding="utf-8"))["bridges"]
+CROSS_REPO_BRIDGES = [{k: v for k, v in b.items() if not k.startswith("_")} for b in _XREPO]
 
 ALIASES = {
     "ref_kiotel_shared": "kiotel_web_core_shared_src_index",
@@ -166,6 +171,21 @@ def main(path: str) -> None:
         if k in have or b["source"] not in ids or b["target"] not in ids:
             continue
         edges.append(dict(b)); have.add(k); stats["bridges"] += 1
+
+    # Cross-repo bridges (deep-read verified). Report any whose endpoints are
+    # absent so a broken bridge is loud, not silently dropped.
+    stats["xrepo_bridges"] = 0
+    stats["xrepo_broken"] = 0
+    for b in CROSS_REPO_BRIDGES:
+        k = (b["source"], b["target"], b.get("relation"))
+        if b["source"] not in ids or b["target"] not in ids:
+            stats["xrepo_broken"] += 1
+            print(f"  [xrepo BROKEN] {b['source']} -> {b['target']} "
+                  f"({'src' if b['source'] not in ids else 'tgt'} missing)")
+            continue
+        if k in have:
+            continue
+        edges.append(dict(b)); have.add(k); stats["xrepo_bridges"] += 1
 
     for n in nodes:
         patch = NODE_PATCHES.get(n["id"])
