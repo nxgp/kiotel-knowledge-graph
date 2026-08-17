@@ -123,18 +123,23 @@ def main(graph_path: str, build_root: str) -> int:
         print("CONNECTIVITY: networkx unavailable - skipped")
     print()
 
-    # 6. bridges still resolve
-    bridges_path = Path(__file__).resolve().parent / "bridges.json"
-    if bridges_path.exists():
-        bridges = json.loads(bridges_path.read_text(encoding="utf-8"))["bridges"]
+    # 6. bridges still resolve — both the concept->code bridges and the cross-repo ones
+    here = Path(__file__).resolve().parent
+    edge_pairs = {(e["source"], e["target"]) for e in edges}
+    for fname, label in (("bridges.json", "concept->code"),
+                         ("cross-repo-bridges.json", "cross-repo")):
+        bp = here / fname
+        if not bp.exists():
+            continue
+        bridges = json.loads(bp.read_text(encoding="utf-8"))["bridges"]
         broken = [b for b in bridges if b["source"] not in ids or b["target"] not in ids]
-        present = sum(1 for b in bridges
-                      if any(e["source"] == b["source"] and e["target"] == b["target"]
-                             for e in edges))
-        print(f"BRIDGES: {len(bridges)} curated; {present} present in graph; "
+        present = sum(1 for b in bridges if (b["source"], b["target"]) in edge_pairs)
+        print(f"BRIDGES ({label}): {len(bridges)} curated; {present} present in graph; "
               f"{len(broken)} reference missing nodes")
         for b in broken[:8]:
             print(f"   BROKEN: {b['source']} -> {b['target']}")
+        if broken:
+            fail = True
     print()
 
     # 7. source spot-check

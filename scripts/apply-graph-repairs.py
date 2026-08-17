@@ -79,6 +79,25 @@ EXTRA_NODES = [
      "label": "Spaces bucket policy (kiotel-storage) — public read for property logos/images",
      "file_type": "document",
      "source_file": "kiotel-pms/deploy/spaces/kiotel-storage-policy.json", "source_location": "L1"},
+    # wave-2 symbol-less artifacts worth being queryable (JSON configs / trained schemas that
+    # AST/semantic passes skip but carry real meaning — esp. the chatbot's NL->SQL schema
+    # behind a critical security finding).
+    {"id": "chatbot_services_customer_module_schema_schema_context",
+     "label": "chatbot NL->SQL trained schema (schema_context.json) — includes sensitive kiosk tables: app_secrets, device_oauth, ext_oauth_codes, external_api_clients",
+     "file_type": "document",
+     "source_file": "chatbot/services/customer_module/schema/schema_context.json", "source_location": "L1"},
+    {"id": "chatbot_services_customer_module_schema_training_examples",
+     "label": "chatbot NL->SQL training examples (question->SQL pairs)", "file_type": "document",
+     "source_file": "chatbot/services/customer_module/schema/training_examples.json", "source_location": "L1"},
+    {"id": "chatbot_services_customer_module_schema_documentation",
+     "label": "chatbot NL->SQL schema documentation", "file_type": "document",
+     "source_file": "chatbot/services/customer_module/schema/documentation.json", "source_location": "L1"},
+    {"id": "kiotel_lox_kiotel_lox_application_appsettings_json",
+     "label": "Lox Windows agent settings (appsettings.json) — API base + device config", "file_type": "document",
+     "source_file": "kiotel_lox/kiotel_lox_application/appsettings.json", "source_location": "L1"},
+    {"id": "kiotel_pms_autofill_managed_schema",
+     "label": "Autofill enterprise-policy schema (managed_schema.json) — apiBase/dashboardBase overrides", "file_type": "document",
+     "source_file": "kiotel_pms_autofill/managed_schema.json", "source_location": "L1"},
 ]
 
 EXTRA_EDGES = [
@@ -109,6 +128,26 @@ EXTRA_EDGES = [
      "target": "kiotel_web_db_table_session_ai_audit",
      "relation": "semantically_similar_to", "confidence": "INFERRED", "confidence_score": 0.95,
      "source_file": "audio_services/docs/DATA_MODEL.md", "source_location": None, "weight": 1.0},
+    # wire the wave-2 artifact nodes so they aren't orphans
+    {"source": "chatbot_services_customer_module_src_db", "target": "chatbot_services_customer_module_schema_schema_context",
+     "relation": "references", "confidence": "EXTRACTED", "confidence_score": 1.0,
+     "source_file": "chatbot/services/customer_module/src/db.py", "source_location": None, "weight": 1.0},
+    {"source": "chatbot_services_customer_module_schema_training_examples", "target": "chatbot_services_customer_module_schema_schema_context",
+     "relation": "references", "confidence": "EXTRACTED", "confidence_score": 1.0,
+     "source_file": "chatbot/services/customer_module/schema/training_examples.json", "source_location": None, "weight": 1.0},
+    {"source": "chatbot_services_customer_module_schema_documentation", "target": "chatbot_services_customer_module_schema_schema_context",
+     "relation": "references", "confidence": "EXTRACTED", "confidence_score": 1.0,
+     "source_file": "chatbot/services/customer_module/schema/documentation.json", "source_location": None, "weight": 1.0},
+    # the chatbot's trained schema names the platform's sensitive tables (the security finding, made queryable)
+    {"source": "chatbot_services_customer_module_schema_schema_context", "target": "kiotel_web_core_backend_src_db_db_schema_view",
+     "relation": "shares_data_with", "confidence": "EXTRACTED", "confidence_score": 1.0,
+     "source_file": "chatbot/services/customer_module/schema/schema_context.json", "source_location": None, "weight": 1.0},
+    {"source": "kiotel_pms_autofill_managed_schema", "target": "kiotel_pms_autofill_background",
+     "relation": "references", "confidence": "EXTRACTED", "confidence_score": 1.0,
+     "source_file": "kiotel_pms_autofill/managed_schema.json", "source_location": None, "weight": 1.0},
+    {"source": "kiotel_lox_kiotel_lox_application_program", "target": "kiotel_lox_kiotel_lox_application_appsettings_json",
+     "relation": "references", "confidence": "EXTRACTED", "confidence_score": 1.0,
+     "source_file": "kiotel_lox/kiotel_lox_application/Program.cs", "source_location": None, "weight": 1.0},
 ]
 
 # node id -> metadata patches (verified against source)
