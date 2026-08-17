@@ -1,14 +1,17 @@
 # kiotel-knowledge-graph
 
 A **combined knowledge graph of the entire Kiotel codebase** — built with
-[Graphify](https://github.com/Graphify-Labs/graphify) across all four repos — served as a
+[Graphify](https://github.com/Graphify-Labs/graphify) across all **14 repos** — served as a
 **dockerized MCP server** so any dev's AI assistant (Claude Code, Cursor, Codex…) can query
-how the Kiotel system fits together and *why*.
+how the whole Kiotel estate fits together and *why*.
 
-**Current graph** (deep-mode build, 2026-07-23): **7,770 nodes · 18,832 edges · 411
-communities**, one connected component spanning all four repos (88% of nodes). Provenance
-on every edge: 98% EXTRACTED (structural fact), 2% INFERRED (including 98 curated
-concept→code bridges), 0% unresolved AMBIGUOUS.
+**Current graph** (rebuilt 2026-08-16 across all 14 repos): **15,874 nodes · 38,524 edges ·
+1,051 communities**, one connected component spanning every repo. Provenance on every edge:
+97% EXTRACTED (structural fact), 3% INFERRED (including curated concept→code and 10
+deep-read-verified cross-repo bridges), 0% unresolved AMBIGUOUS. Coverage: 99.1% of the
+2,315-file corpus (the gaps are VSCode configs, JSON data files, and ML model-weight
+manifests with no extractable structure). See [`docs/kiotel-estate.html`](docs/kiotel-estate.html)
+for the full estate map — what each repo does, how they connect, and the security findings.
 
 > Ask "what connects the kiosk to the platform?", "where does a guest's ID scan flow?",
 > "what writes into `session_ai_audit`?" — and get answers grounded in the actual code
@@ -29,20 +32,35 @@ graphify-out/                the built graph: graph.json (served), graph.html (v
 mcp/claude-code-mcp.md       per-assistant wiring + query patterns & known corpus issues
 ```
 
-## The four repos it graphs
+## The 14 repos it graphs
 
+**The kiosk platform** (the revenue product):
 | Repo | Role |
 |---|---|
-| `kiotel_hardware` | the physical lobby kiosk (Windows .NET, WebView2 shell) |
-| `kiotel_web` | **the platform hub** — dashboards + real-time backend (Express/Knex/Socket.IO/Next.js) |
-| `audio_services` | records + AI-audits each check-in call (FastAPI, Deepgram, LLM audit) |
-| `kiotel-pms` | property management (rooms, rates, bookings) |
+| `kiotel_web` | **the hub** — Express/Knex/Socket.IO backend + Next.js; owns the `kiosk` DB (61 tables), drives kiosks over Socket.IO, 5 auth principals |
+| `kiotel_hardware` | the physical lobby kiosk (Windows .NET + WebView2, 86 RELAY commands) |
+| `audio_services` | records + AI-audits each call (FastAPI, Deepgram, LLM audit → `session_ai_audit`) |
+| `kiotel_pms_autofill` | Chrome MV3 extension; OAuth2 PKCE, autofills live guest data into PMS screens |
 
-Each repo carries `README.md` + `docs/{SYSTEM,ARCHITECTURE,DATA_MODEL,INTEGRATIONS}.md`.
+**The internal suite** (federated auth around a real IdP):
+| Repo | Role |
+|---|---|
+| `kiotel_admin` | central identity provider (admin.kiotel.co) — EdDSA JWTs, JWKS, MFA, RBAC |
+| `kiotel_space` | staff workspace (space.kiotel.co) — chat/tasks/updates; delegates auth to admin |
+| `kiotel_lox` | door-key encoding (lox.kiotel.co) — Go API + .NET agent; best security posture |
+
+**Property, portal & AI:**
+| Repo | Role |
+|---|---|
+| `kiotel-pms` | standalone PMS (rooms/rates/reservations/folio) — no code link to the rest |
+| `Kiotel_portal_front` / `hr_kiotel_backend` | company portal + HR/attendance (portal.kiotel.co) |
+| `chatbot` | LangGraph support bot; NL→SQL over the platform DB |
+| `stt_tts_inhouse` / `guest_translation` / `speech_to_text_serverless` | three in-house STT/translation services |
+
 Graphify's structural pass (tree-sitter AST) discovers *what connects to what*; the docs
-supply *why*, including cross-repo intent (kiosk↔platform, platform↔audit, platform↔pms).
-On top of that, this build adds verified concept→code bridge edges so doc concepts land on
-the real symbols they describe.
+supply *why*. On top of that, this build adds **10 cross-repo bridges**
+(`scripts/cross-repo-bridges.json`), each grounded in verified file+line evidence from a
+15-agent code deep-read — these are what join all 14 repos into one queryable component.
 
 ## Use it (no build required)
 
