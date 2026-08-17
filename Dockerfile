@@ -6,7 +6,11 @@
 # Auth:   docker run -d -p 8080:8080 -e GRAPHIFY_API_KEY=<key> kiotel-graph-mcp
 FROM python:3.12-slim
 
-RUN pip install --no-cache-dir "graphifyy[mcp]==0.9.25"
+# Pin mcp<2: graphify 0.9.25's serve module imports `mcp.types.AnyUrl`, which
+# mcp 2.0.0 removed. The [mcp] extra doesn't cap the version, so an unpinned
+# install silently pulls 2.x and the server crashes at startup with a
+# misleading "mcp not installed". Pinning keeps the image reproducible.
+RUN pip install --no-cache-dir "graphifyy[mcp]==0.9.25" "mcp<2"
 
 WORKDIR /app
 COPY graphify-out/graph.json /app/graph.json
