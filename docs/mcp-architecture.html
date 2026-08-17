@@ -164,7 +164,7 @@ args = ["-y", "mcp-remote", "https://kiotel-graph-mcp-rmevc.ondigitalocean.app/m
     <g>
       <rect class="art" x="140" y="232" width="195" height="60" rx="8"/>
       <text x="237" y="255" text-anchor="middle">Structural pass</text>
-      <text x="237" y="273" text-anchor="middle" class="small">tree-sitter AST · free · 951 files</text>
+      <text x="237" y="273" text-anchor="middle" class="small">tree-sitter AST · free · 2,213 code files</text>
 
       <rect class="art" x="352" y="232" width="195" height="60" rx="8"/>
       <text x="449" y="255" text-anchor="middle">Semantic pass</text>
@@ -172,7 +172,7 @@ args = ["-y", "mcp-remote", "https://kiotel-graph-mcp-rmevc.ondigitalocean.app/m
 
       <rect class="art" x="564" y="232" width="195" height="60" rx="8"/>
       <text x="661" y="255" text-anchor="middle">Gap repair + bridges</text>
-      <text x="661" y="273" text-anchor="middle" class="small">98 verified concept→code edges</text>
+      <text x="661" y="273" text-anchor="middle" class="small">99 concept→code + 15 cross-repo</text>
     </g>
 
     <path class="edge" style="color:var(--muted)" d="M450,308 L450,332"/>
@@ -186,9 +186,9 @@ args = ["-y", "mcp-remote", "https://kiotel-graph-mcp-rmevc.ondigitalocean.app/m
     <text x="466" y="406" class="tag">COPY&#8217;d into image at build</text>
 
     <!-- docker serve -->
-    <rect class="serve" x="230" y="414" width="440" height="66" rx="10"/>
-    <text x="450" y="438" text-anchor="middle" font-weight="600">Docker: python -m graphify.serve — Streamable HTTP MCP</text>
-    <text x="450" y="458" text-anchor="middle" class="small">:8080 /mcp · stateless · TCP healthcheck · optional GRAPHIFY_API_KEY · TLS in front</text>
+    <rect class="serve" x="210" y="414" width="480" height="66" rx="10"/>
+    <text x="450" y="437" text-anchor="middle" font-weight="600">DO App Platform · amd64 image · metrics_server.py wraps graphify MCP</text>
+    <text x="450" y="457" text-anchor="middle" class="small">Streamable HTTP :8080 · /mcp + /dashboard + /healthz · auto-TLS · keyless</text>
 
     <path class="edge" style="color:var(--muted)" d="M450,480 L450,504"/>
     <text x="466" y="498" class="tag">JSON-RPC tools/call</text>
@@ -252,19 +252,31 @@ get_neighbors("session_ai_audit")
     <tr><td>Fuzzy matching can grab lexical strays ("table" → UI <code>Table()</code>)</td><td>Use distinctive identifiers</td></tr>
   </table>
 
-  <h2>Known corpus issues (verified 2026-07-23)</h2>
-  <div class="warn"><b>Security:</b> hardcoded Deepgram API key at
-  <code>audio_services/stt-tts-using-api-only/app/config.py:6</code> — rotate and move to
-  env. Verified absent from <code>graph.json</code> and the extraction cache.</div>
-  <div class="warn"><b>Doc/code drift:</b> the <code>stt-tts-using-api-only</code> README
-  claims ElevenLabs Scribe; the code exclusively uses Deepgram nova-3. The graph keeps this
-  edge as documentation of the discrepancy.</div>
-  <div class="warn"><b>Dead assets:</b> <code>kiotel_web</code> frontend ships the five stock
-  Next.js starter SVGs with no source references.</div>
+  <h2>Known corpus issues (from the 14-repo code deep-read)</h2>
+  <p style="margin:0 0 10px;color:var(--muted)">Ranked security findings — full detail, with
+  file+line evidence, in <code>docs/kiotel-estate.html</code>. Secret <em>locations</em> are
+  noted; values never are, and are verified absent from <code>graph.json</code>.</p>
+  <div class="warn"><b>1 · Committed production credentials:</b>
+  <code>Kiotel_portal_front</code> has live MySQL passwords, a shared JWT secret, and a Gmail
+  app password in git (<code>server/server.py</code>, <code>models.py</code>); plus the
+  outstanding hardcoded Deepgram key in <code>audio_services</code>. Rotate all, purge history.</div>
+  <div class="warn"><b>2 · Guest ID scans are world-readable:</b> the platform uploads scan
+  images + extracted-info JSON with <code>ACL: "public-read"</code>
+  (<code>kiotel_web/…/services/storage.ts</code>) — guest PII on a public CDN.</div>
+  <div class="warn"><b>3 · Broken auth in the portal/HR cluster:</b> plaintext password
+  comparison, passwordless legacy logins, and role assignment from client-sent headers in
+  <code>hr_kiotel_backend</code> and the portal Flask backend.</div>
+  <div class="warn"><b>4 · Chatbot NL→SQL reaches credential tables:</b> the trained schema
+  (<code>schema_context.json</code>) names <code>app_secrets</code>, <code>device_oauth</code>,
+  <code>ext_oauth_codes</code> — behind self-declared roles and a regex guard.</div>
+  <div class="warn"><b>5 · Unauthenticated public services:</b> two GPU speech services and two
+  of three <code>audio_services</code> endpoints answer with no credential.</div>
 
   <p class="foot">Repo: <code>github.com/nxgp/kiotel-knowledge-graph</code> · engine:
-  graphifyy[mcp] 0.9.25 · build: deep mode, 2026-07-23 · wiring details in
-  <code>mcp/claude-code-mcp.md</code>, rebuild steps in <code>RUNBOOK.md</code>.</p>
+  graphifyy[mcp] 0.9.25 (mcp&lt;2) · graph: 14 repos, deep mode, rebuilt 2026-08-16, gap-swept
+  2026-08-17 · companion docs: <code>kiotel-estate.html</code> (the full estate map),
+  <code>synxis-integration-plan.html</code>, <code>automation-plan.html</code> · rebuild +
+  redeploy: <code>RUNBOOK.md</code> and <code>scripts/deploy-do.sh</code>.</p>
 </main>
 </body>
 </html>
