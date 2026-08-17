@@ -5,7 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Kiotel Knowledge Graph MCP — Architecture</title>
 <style>
+  /* Light theme, locked — this doc always renders light regardless of OS setting. */
   :root {
+    color-scheme: light;
     --bg: #f7f7f5; --panel: #ffffff; --ink: #1a1a1a; --muted: #6b6b6b;
     --line: #d9d9d4; --accent: #0f6b5c; --accent-soft: #e3f0ed;
     --repo: #eef2fa; --repo-line: #9db3d8;
@@ -14,18 +16,7 @@
     --client: #e9f4e7; --client-line: #8fbb86;
     --warn-bg: #fdeaea; --warn-line: #cc6b6b;
     --code-bg: #f0f0ec;
-  }
-  @media (prefers-color-scheme: dark) {
-    :root {
-      --bg: #16181a; --panel: #1f2225; --ink: #e8e6e1; --muted: #9a9a94;
-      --line: #3a3d40; --accent: #5fc4ae; --accent-soft: #1d3833;
-      --repo: #232c3b; --repo-line: #4d6491;
-      --pipe: #37301f; --pipe-line: #937b47;
-      --serve: #2b2538; --serve-line: #6f5fa3;
-      --client: #24301f; --client-line: #5f7f57;
-      --warn-bg: #3a2424; --warn-line: #a05252;
-      --code-bg: #26292c;
-    }
+    --live-bg: #e3f0ed; --live-line: #0f6b5c;
   }
   * { box-sizing: border-box; }
   body {
@@ -69,50 +60,90 @@
   }
   .warn { background: var(--warn-bg); border: 1px solid var(--warn-line); border-radius: 10px; padding: 12px 16px; margin: 10px 0; font-size: 0.92rem; }
   .foot { color: var(--muted); font-size: 0.82rem; margin-top: 56px; border-top: 1px solid var(--line); padding-top: 16px; }
+  .live { background: var(--live-bg); border: 1px solid var(--live-line); border-radius: 12px; padding: 18px 22px; }
+  .live .url { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-size: 1.05rem; font-weight: 700; color: var(--accent); word-break: break-all; margin: 0 0 14px; }
+  .live table.conn { width: 100%; border-collapse: collapse; background: var(--panel); border: 1px solid var(--line); border-radius: 8px; overflow: hidden; font-size: 0.86rem; margin-bottom: 4px; }
+  .live table.conn td { padding: 7px 12px; border-bottom: 1px solid var(--line); }
+  .live table.conn tr:last-child td { border-bottom: none; }
+  .live table.conn td:first-child { color: var(--muted); white-space: nowrap; width: 1%; padding-right: 20px; }
+  .live pre { background: var(--panel); }
+  .live .note { color: var(--muted); font-size: 0.8rem; margin: 12px 0 0; }
 </style>
 </head>
 <body>
 <main>
   <h1>Kiotel Knowledge Graph MCP</h1>
-  <p class="lede">One queryable graph of the entire Kiotel system — four repos, their code
+  <p class="lede">One queryable graph of the entire Kiotel estate — all 14 repos, their code
   structure, and the intent docs that explain <em>why</em> the pieces connect — served to AI
   assistants over the Model Context Protocol (Streamable HTTP).</p>
 
   <div class="tiles">
-    <div class="tile"><b>7,770</b><span>nodes</span></div>
-    <div class="tile"><b>18,832</b><span>edges</span></div>
-    <div class="tile"><b>411</b><span>communities</span></div>
-    <div class="tile"><b>4</b><span>repos, one component (88%)</span></div>
-    <div class="tile"><b>98%</b><span>EXTRACTED provenance</span></div>
+    <div class="tile"><b>16,011</b><span>nodes</span></div>
+    <div class="tile"><b>38,877</b><span>edges</span></div>
+    <div class="tile"><b>1,051</b><span>communities</span></div>
+    <div class="tile"><b>14</b><span>repos, one component</span></div>
+    <div class="tile"><b>97%</b><span>EXTRACTED provenance</span></div>
+  </div>
+
+  <h2>Connect to the live server</h2>
+  <div class="live">
+    <p style="margin:0 0 10px"><b>The graph is deployed and shared for the whole team</b> on
+    DigitalOcean App Platform (public HTTPS, auto-TLS):</p>
+    <p class="url">https://kiotel-graph-mcp-rmevc.ondigitalocean.app</p>
+    <table class="conn">
+      <tr><td>MCP endpoint</td><td><code>https://kiotel-graph-mcp-rmevc.ondigitalocean.app/mcp</code></td></tr>
+      <tr><td>Usage dashboard</td><td><code>https://kiotel-graph-mcp-rmevc.ondigitalocean.app/dashboard</code></td></tr>
+      <tr><td>Health probe</td><td><code>https://kiotel-graph-mcp-rmevc.ondigitalocean.app/healthz</code></td></tr>
+    </table>
+    <h3 style="font-size:0.95rem;margin:16px 0 6px">Claude chat (claude.ai)</h3>
+    <p style="margin:0 0 8px">Settings → Connectors → <b>Add custom connector</b> → name
+    <code>Kiotel Graph</code>, URL the <code>/mcp</code> endpoint above. Enable it in a chat,
+    then ask "what connects the kiosk to the platform?"</p>
+    <h3 style="font-size:0.95rem;margin:16px 0 6px">Claude Code / Cursor</h3>
+    <pre><code>{ "mcpServers": { "kiotel-graph": {
+    "type": "http",
+    "url": "https://kiotel-graph-mcp-rmevc.ondigitalocean.app/mcp"
+} } }</code></pre>
+    <h3 style="font-size:0.95rem;margin:16px 0 6px">Codex CLI</h3>
+    <p style="margin:0 0 6px">Codex speaks MCP too. It launches servers as subprocesses, so
+    point it at this HTTP endpoint through the bundled <code>mcp-remote</code> bridge — in
+    <code>~/.codex/config.toml</code>:</p>
+    <pre><code>[mcp_servers.kiotel-graph]
+command = "npx"
+args = ["-y", "mcp-remote", "https://kiotel-graph-mcp-rmevc.ondigitalocean.app/mcp"]</code></pre>
+    <p class="note">No auth key required (keyless so the claude.ai connector works) — treat the
+    URL as sensitive since it exposes internal architecture. Update the graph with
+    <code>./scripts/deploy-do.sh</code>; App Platform's disk is ephemeral, so dashboard metrics
+    reset on redeploy.</p>
   </div>
 
   <h2>Architecture</h2>
   <div class="diagram-wrap">
   <svg viewBox="0 0 900 560" xmlns="http://www.w3.org/2000/svg" role="img"
-       aria-label="Architecture: four repos flow into a build root, through the Graphify pipeline into graph.json, served by a Docker MCP container to AI assistants">
+       aria-label="Architecture: all 14 Kiotel repos flow into a build root, through the Graphify pipeline into graph.json, served by a Docker MCP container to AI assistants">
     <defs>
       <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
         <path d="M0,0 L10,5 L0,10 z" fill="currentColor" opacity="0.65"/>
       </marker>
     </defs>
 
-    <!-- Row 1: four repos -->
+    <!-- Row 1: representative repos (14 total) -->
     <g>
       <rect class="repo" x="20"  y="20" width="200" height="64" rx="9"/>
-      <text x="120" y="46" text-anchor="middle" font-weight="600">kiotel_hardware</text>
-      <text x="120" y="66" text-anchor="middle" class="small">lobby kiosk · .NET / WebView2</text>
+      <text x="120" y="46" text-anchor="middle" font-weight="600">kiotel_web (hub)</text>
+      <text x="120" y="66" text-anchor="middle" class="small">Express · Knex · Socket.IO · Next.js</text>
 
       <rect class="repo" x="240" y="20" width="200" height="64" rx="9"/>
-      <text x="340" y="46" text-anchor="middle" font-weight="600">kiotel_web (hub)</text>
-      <text x="340" y="66" text-anchor="middle" class="small">Express · Knex · Socket.IO · Next.js</text>
+      <text x="340" y="46" text-anchor="middle" font-weight="600">kiotel-admin (IdP)</text>
+      <text x="340" y="66" text-anchor="middle" class="small">EdDSA JWTs · JWKS · RBAC · Fastify</text>
 
       <rect class="repo" x="460" y="20" width="200" height="64" rx="9"/>
-      <text x="560" y="46" text-anchor="middle" font-weight="600">audio_services</text>
-      <text x="560" y="66" text-anchor="middle" class="small">call recording + AI audit · FastAPI</text>
+      <text x="560" y="46" text-anchor="middle" font-weight="600">kiotel-space</text>
+      <text x="560" y="66" text-anchor="middle" class="small">staff workspace · Prisma / PG17</text>
 
-      <rect class="repo" x="680" y="20" width="200" height="64" rx="9"/>
-      <text x="780" y="46" text-anchor="middle" font-weight="600">kiotel-pms</text>
-      <text x="780" y="66" text-anchor="middle" class="small">rooms · rates · bookings</text>
+      <rect class="repo" x="680" y="20" width="200" height="64" rx="9" stroke-dasharray="5 4"/>
+      <text x="780" y="46" text-anchor="middle" font-weight="600">+ 11 more</text>
+      <text x="780" y="66" text-anchor="middle" class="small">hardware · audio · pms · lox · chatbot …</text>
     </g>
 
     <path class="edge" style="color:var(--muted)" d="M120,84 L120,108 Q120,118 130,118 L430,118"/>
@@ -149,7 +180,7 @@
     <!-- graph.json -->
     <rect class="art" x="300" y="334" width="300" height="54" rx="10"/>
     <text x="450" y="357" text-anchor="middle" font-weight="600">graphify-out/graph.json</text>
-    <text x="450" y="375" text-anchor="middle" class="small">7,770 nodes · 18,832 edges · committed to git</text>
+    <text x="450" y="375" text-anchor="middle" class="small">16,011 nodes · 38,877 edges · committed to git</text>
 
     <path class="edge" style="color:var(--muted)" d="M450,388 L450,412"/>
     <text x="466" y="406" class="tag">COPY&#8217;d into image at build</text>
