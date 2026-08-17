@@ -127,7 +127,9 @@
   <h2 id="glance">1 · The estate at a glance</h2>
   <p>Kiotel is not one system. It is <b>two loosely-coupled halves</b> plus a scattering of
   satellites — and the most important structural fact is that the two halves have
-  <b>separate identity systems that do not talk to each other</b>.</p>
+  <b>separate identity systems</b>: the internal suite federates auth to <code>kiotel-admin</code>,
+  the kiosk platform runs its own. They meet only on the <em>data</em> plane — the internal
+  suite reads the kiosk platform through its partner API — never on the identity plane.</p>
   <table>
     <tr><th>Cluster</th><th>Repos</th><th>What it is</th></tr>
     <tr><td><b>The kiosk platform</b><br><span class="meta">the original 4 + extension</span></td>
@@ -245,9 +247,11 @@
     <path class="edge auth" style="color:var(--ident-line)" d="M700,168 L700,378"/>
     <text x="640" y="290" class="tag" text-anchor="end">HMAC admin API</text>
 
-    <!-- the one real cross-cluster link -->
-    <path class="edge" style="color:var(--edge)" d="M646,272 L482,262"/>
-    <text x="500" y="252" class="tag">kio_ token → transaction reports</text>
+    <!-- the cross-cluster data-plane links (identity stays separate) -->
+    <path class="edge" style="color:var(--edge)" d="M646,272 L482,258"/>
+    <text x="512" y="248" class="tag">space → web: kio_ transaction reports</text>
+    <path class="edge" style="color:var(--edge)" d="M646,120 Q520,150 482,246"/>
+    <text x="512" y="188" class="tag">admin → web: kio_ /external/devices</text>
 
     <!-- shared bucket -->
     <rect x="150" y="592" width="620" height="48" rx="10" fill="none" stroke="var(--muted)" stroke-dasharray="5 4"/>
@@ -267,9 +271,13 @@
   <code>kiotel_web</code> does <b>not</b> use <code>kiotel-admin</code> as its identity
   provider. A repo-wide grep for <code>admin.kiotel.co</code>, <code>jwks</code>, and EdDSA
   found nothing — the hub runs its own five-principal auth (HS256 agent/admin JWTs,
-  <code>device_secret_hash</code>, <code>kio_</code> partner tokens, ext-OAuth). The estate has
-  <b>two identity worlds</b>, and only one link crosses between them: kiotel-space holding a
-  <code>kio_</code> partner token to read transaction reports.</div>
+  <code>device_secret_hash</code>, <code>kio_</code> partner tokens, ext-OAuth). So the
+  <b>identity planes stay separate</b> — the internal suite federates to kiotel-admin, the
+  kiosk platform does not. But the <b>data plane is not isolated</b>: the internal suite
+  reaches into the kiosk platform as a partner-API <em>client</em> — kiotel-space holds a
+  <code>kio_</code> token to read transaction reports, and (found in the gap sweep)
+  <b>kiotel-admin itself calls <code>/api/v1/external/devices</code></b> with a partner token
+  (<code>kiosk-devices.service.ts</code>). Two identity worlds, one shared data plane.</div>
 
   <h2 id="core">3 · The four core systems</h2>
   <p>These four are the product. They were previously mapped from documentation only; the
@@ -631,9 +639,11 @@
   original-four agents were given the other repos' findings so they could verify <em>both sides</em>
   of every integration. Every cross-repo connection in the underlying dataset carries a file path
   and a verbatim evidence line. Secret <em>locations</em> are reported; secret <em>values</em>
-  never are. Companion docs: <code>mcp-architecture.html</code>,
-  <code>synxis-integration-plan.html</code>, <code>automation-plan.html</code>.
-  Generated 2026-08-16.</div>
+  never are. All 14 repos are now in the knowledge graph (16,011 nodes / 38,877 edges, one
+  connected component, verified 99.4% corpus coverage), with each cross-repo connection above
+  encoded as a bridge edge you can traverse via the MCP. Companion docs:
+  <code>mcp-architecture.html</code>, <code>synxis-integration-plan.html</code>,
+  <code>automation-plan.html</code>. Generated 2026-08-16, gap-swept 2026-08-17.</div>
 </main>
 </body>
 </html>
