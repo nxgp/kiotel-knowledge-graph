@@ -22,11 +22,19 @@ import sys
 from collections import Counter, defaultdict
 from pathlib import Path
 
+# Current kiotel-team repo names (same list as REPOS in assemble-build-root.py).
 REPOS = [
-    "kiotel_web", "kiotel-pms", "kiotel_hardware", "audio_services",
-    "kiotel_space", "kiotel_admin", "kiotel_portal_front", "chatbot",
-    "hr_kiotel_backend", "kiotel_lox", "stt_tts_inhouse", "guest_translation",
-    "speech_to_text_serverless", "kiotel_pms_autofill",
+    # kiosk platform
+    "kiosk_dashboard", "kiosk_dashboard_windows_client", "kiosk_pms_autofill_extension",
+    "kiosk_ai_services", "kiotel_transcription_service", "kiosk_ai_avatar",
+    # identity + workspace
+    "kiotel_admin_central", "kiotel-space", "kiotel_communications_services",
+    "kiotel_internal_operations_portal", "kiotel_internal_operations_backend", "kiotel_ui_kit",
+    # integrations
+    "kiotel_pms_aggregator_service", "kiotel_payment_aggregator_service",
+    "kiotel_channel_manager", "kiotel-pms", "kiotel_lox", "kiotel_chatbot_service",
+    # API collections (catalog markdown)
+    "kiotel_dev_docs",
 ]
 
 

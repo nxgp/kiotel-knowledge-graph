@@ -13,3 +13,9 @@ metrics-data/
 
 # deep-read intermediate artifacts (regenerable)
 graphify-out/.deep_read_*.json
+graphify-out/.graphify_analysis.json
+graphify-out/.graphify_labels.json.sig
+graphify-out/.graphify_build.json
+graphify-out/.graphify_semantic_marker
+graphify-out/.graphify_root
+graphify-out/20*/

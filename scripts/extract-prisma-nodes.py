@@ -5,10 +5,10 @@ kiotel-space (36 models / 7 enums) and kiotel-admin (25 models / 14 enums) defin
 entire data model in a single `schema.prisma` file. tree-sitter has no Prisma grammar, so
 the AST pass produces ZERO nodes for these — the source-of-truth schema of the two largest
 new repos was invisible. This mirrors extract-db-schema-nodes.py (which did the same for
-kiotel_web's db_schema_view.ts).
+kiosk_dashboard's db_schema_view.ts).
 
 For each `model X { ... }` and `enum X { ... }` block it injects:
-  - one node  (kiotel_space_prisma_model_<name> / kiotel_admin_prisma_enum_<name>)
+  - one node  (kiotel_space_prisma_model_<name> / kiotel_admin_central_prisma_enum_<name>)
   - contains edges: schema.prisma file-node --contains--> each model/enum
   - relation edges: model A --references--> model B where A has a field typed `B` (a
     Prisma relation), captured from the field lines
@@ -22,8 +22,8 @@ import sys
 from pathlib import Path
 
 SCHEMAS = [
-    ("kiotel_space", "kiotel_space/backend/prisma/schema.prisma"),
-    ("kiotel_admin", "kiotel_admin/backend/prisma/schema.prisma"),
+    ("kiotel_space", "kiotel-space/backend/prisma/schema.prisma"),
+    ("kiotel_admin_central", "kiotel_admin_central/backend/prisma/schema.prisma"),
 ]
 
 BLOCK_RE = re.compile(r"^(model|enum)\s+([A-Za-z_][A-Za-z0-9_]*)\s*\{", re.M)

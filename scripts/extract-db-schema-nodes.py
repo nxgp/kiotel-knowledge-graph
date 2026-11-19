@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
-"""Promote the kiotel_web DB schema to first-class graph nodes.
+"""Promote the kiosk_dashboard DB schema to first-class graph nodes.
 
 The Kiotel team's DB source of truth is:
-  - kiotel_web/core/backend/src/db/db_schema_view.ts  (all tables/columns/enums — but it is
+  - kiosk_dashboard/core/backend/src/db/db_schema_view.ts  (all tables/columns/enums — but it is
     ONE giant comment block, so AST extraction sees zero symbols in it)
-  - kiotel_web/core/backend/src/db/migrations/        (61 knex migrations)
+  - kiosk_dashboard/core/backend/src/db/migrations/        (61 knex migrations)
 
 This script parses the schema reference and the migration filenames and injects:
-  - one node per documented table  (kiotel_web_db_table_<name>, EXTRACTED from the doc line)
+  - one node per documented table  (kiosk_dashboard_db_table_<name>, EXTRACTED from the doc line)
   - one node per table that a `*_create_<name>` migration creates but the schema doc does
     NOT document yet (labelled as such — the doc is stale relative to migrations)
   - edges: db_schema_view.ts --contains--> table, migration --references--> table (matched
@@ -21,13 +21,13 @@ import re
 import sys
 from pathlib import Path
 
-SCHEMA_REL = "kiotel_web/core/backend/src/db/db_schema_view.ts"
-MIG_REL = "kiotel_web/core/backend/src/db/migrations"
-SCHEMA_NODE = "kiotel_web_core_backend_src_db_db_schema_view"
+SCHEMA_REL = "kiosk_dashboard/core/backend/src/db/db_schema_view.ts"
+MIG_REL = "kiosk_dashboard/core/backend/src/db/migrations"
+SCHEMA_NODE = "kiosk_dashboard_core_backend_src_db_db_schema_view"
 
 
 def mig_node_id(stem: str) -> str:
-    return "kiotel_web_core_backend_src_db_migrations_" + re.sub(r"[^a-z0-9]+", "_", stem.lower())
+    return "kiosk_dashboard_core_backend_src_db_migrations_" + re.sub(r"[^a-z0-9]+", "_", stem.lower())
 
 
 def main(graph_path: str, build_root: str) -> None:
@@ -65,7 +65,7 @@ def main(graph_path: str, build_root: str) -> None:
             have.add((src, tgt)); added_e += 1
 
     for name, line in tables.items():
-        nid = f"kiotel_web_db_table_{name}"
+        nid = f"kiosk_dashboard_db_table_{name}"
         add_node(nid, f"DB table: {name}", SCHEMA_REL, f"L{line}")
         add_edge(SCHEMA_NODE, nid, "contains", SCHEMA_REL, f"L{line}")
 
@@ -76,7 +76,7 @@ def main(graph_path: str, build_root: str) -> None:
         if m and m.group(1) not in tables:
             name = m.group(1)
             undocumented.append(name)
-            nid = f"kiotel_web_db_table_{name}"
+            nid = f"kiosk_dashboard_db_table_{name}"
             add_node(nid, f"DB table: {name} (created by migration; NOT yet in db_schema_view.ts)",
                      f"{MIG_REL}/{stem}.ts", "L1")
 
@@ -93,7 +93,7 @@ def main(graph_path: str, build_root: str) -> None:
         for name in matched:
             mid = mig_node_id(stem)
             if mid in ids:
-                add_edge(mid, f"kiotel_web_db_table_{name}", "references",
+                add_edge(mid, f"kiosk_dashboard_db_table_{name}", "references",
                          f"{MIG_REL}/{stem}.ts", None)
                 linked += 1
 
