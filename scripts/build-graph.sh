@@ -33,7 +33,12 @@ if [ -z "$PY" ]; then
 fi
 [ -n "$PY" ] || { echo "ERROR: Python 3.10+ not found (set PYTHON=...)" >&2; exit 1; }
 
-"$PY" "$HERE/scripts/assemble-build-root.py" "$@"
+# Git Bash on Windows hands us POSIX-style paths (/f/job.../scripts/x.py) that a native
+# Windows Python cannot open; cygpath converts them (a no-op where cygpath does not exist).
+winpath() { if command -v cygpath >/dev/null 2>&1; then cygpath -w "$1"; else printf '%s' "$1"; fi; }
+[ -z "${REPOS_DIR:-}" ] || export REPOS_DIR="$(winpath "$REPOS_DIR")"
+
+"$PY" "$(winpath "$HERE/scripts/assemble-build-root.py")" "$@"
 
 case " $* " in *" --dry-run "*) exit 0;; esac
 
