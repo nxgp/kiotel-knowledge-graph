@@ -127,7 +127,7 @@ Verified against the live server (graphify 0.9.25):
 - `kiosk_ai_services/stt-tts-using-api-only` still mentions ElevenLabs in its README and a few code comments while `app/core/transcriber.py` uses Deepgram; treat the README as stale. The graph keeps the reference edge as documentation of the discrepancy.
 - `kiosk_dashboard/core/frontend/public` still ships the stock Next.js starter SVGs (`file`, `globe`, `next`, `vercel`, `window`).
 - `kiosk_dashboard/core/backend/src/db/db_schema_view.ts` is **stale**: it does not document `session_ai_audit` or `session_events`, which migrations create (reported by `extract-db-schema-nodes.py`; the graph adds table nodes for both from the migrations).
-- Doc concept nodes are named by the LLM pass, so ids like `kiosk_ai_services_audit_pipeline` are not stable across rebuilds. `scripts/bridges.json` was re-anchored for the 2026-11-19 rebuild; 46 of the 94 older concept→code bridges had no counterpart in the rewritten docs and were dropped rather than guessed.
+- Doc concept nodes are named by the LLM pass, so ids like `kiosk_ai_services_audit_pipeline` are not stable across rebuilds. `scripts/bridges.json` was re-anchored for the 2026-11-19 rebuild; 47 of the 94 older concept→code bridges had no counterpart in the rewritten docs (or pointed at deleted code) and were dropped rather than guessed.
 - `kiotel_dev_docs` is condensed to one API-catalog markdown per service, and includes a `kiotel_vision_ai_services` collection whose repo is not part of the 19 cloned repos.
 - `kiotel_channel_manager` is an early skeleton (about 20 files, no code-level links to other repos yet).
 

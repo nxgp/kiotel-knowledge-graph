@@ -5,10 +5,10 @@ A **combined knowledge graph of the entire Kiotel codebase** — built with
 **dockerized MCP server** so any dev's AI assistant (Claude Code, Cursor, Codex…) can query
 how the whole Kiotel estate fits together and *why*.
 
-**Current graph** (rebuilt 2026-11-19 across all 19 repos): **36,133 nodes · 91,722 edges ·
-1,618 communities**, with all 19 repos in one connected component. Provenance on every edge:
+**Current graph** (rebuilt 2026-11-20 across all 19 repos): **37,244 nodes · 94,435 edges ·
+1,661 communities**, with all 19 repos in one connected component. Provenance on every edge:
 97% EXTRACTED (structural fact), 3% INFERRED (including the curated concept→code and
-cross-repo bridges), 0% unresolved AMBIGUOUS. Coverage: 98.9% of the 4,489-file corpus (the
+cross-repo bridges), 0% unresolved AMBIGUOUS. Coverage: 98.8% of the 4,638-file corpus (the
 gaps are JSON data/fixtures and a few docs with no extractable structure; `verify-graph.py`
 lists them). Verifier result: **PASS**.
 
@@ -35,7 +35,8 @@ scripts/apply-graph-repairs.py   post-build repairs + applies both bridge files
 scripts/bridges.json         concept→code bridges (doc/concept node → the code it describes)
 scripts/cross-repo-bridges.json  cross-repo bridges, each with file+line evidence
 scripts/extract-db-schema-nodes.py / extract-prisma-nodes.py   DB table / Prisma model nodes
-scripts/verify-graph.py      PASS/FAIL gate: coverage, per-repo counts, dangling, bridges, spot-check
+scripts/verify-graph.py      PASS/FAIL gate: coverage, per-repo counts, dangling, bridges, spot-check, graph.json size guard
+scripts/smoke-test-mcp.py    real-query smoke test of a running MCP server (HTTP endpoints, 10 tools, cross-repo questions)
 scripts/export-graph-html.py aggregated community view -> graphify-out/graph.html (graph is >5k nodes)
 scripts/write-build-metadata.py  file-sizes.json + cost.json for the metrics dashboard
 .graphifyignore              what to exclude from the graph (deps, binaries, models, secrets)
@@ -92,8 +93,9 @@ join the repos into one queryable component:
   grounded in file+line evidence (payments → PMS aggregator folio API, Space → communications
   call-token contract, Space → UI kit, AI services → transcription RunPod worker, kiosk ↔ avatar),
   and the API-catalog links for `kiotel_dev_docs`.
-- `scripts/bridges.json` — **48** concept→code edges, re-anchored onto the current doc/concept
-  nodes. 46 older ones had no counterpart in the rewritten docs and were dropped, not guessed.
+- `scripts/bridges.json` — **47** concept→code edges, re-anchored onto the current doc/concept
+  nodes. 47 of the original 94 had no counterpart in the rewritten docs (or the code they pointed to was
+  deleted) and were dropped, not guessed.
 
 ## Use it (no build required)
 
@@ -136,6 +138,8 @@ graphify cluster-only build-root --graph graphify-out/graph.json --no-viz
 python scripts/export-graph-html.py       graphify-out/graph.json
 python scripts/write-build-metadata.py build-root graphify-out --input-tokens N --output-tokens M
 python scripts/verify-graph.py            graphify-out/graph.json build-root   # must PASS
+# start mcp/metrics_server.py (RUNBOOK 'Smoke-test the MCP server'), then:
+python scripts/smoke-test-mcp.py http://localhost:8081
 docker build -t kiotel-graph-mcp .
 ```
 
@@ -157,7 +161,7 @@ server — same `/mcp` protocol, plus:
     clients, and a recent-activity feed. Auto-refreshes every 10s.
   - **Graph**: the actual node/edge visualization — graphify's own interactive
     `graph export html` output, embedded live (lazy-loaded on first click). Aggregated
-    community view (1,618 communities), since the full 36k-node graph is too dense to
+    community view (1,661 communities), since the full 37k-node graph is too dense to
     render node-by-node in a browser; search, click-to-inspect, and the community
     checklist all work exactly as they do when opening `graphify-out/graph.html` directly.
 - **`/graph`** — that same visualization, servable/linkable on its own.

@@ -278,7 +278,7 @@
    "source_file": "kiotel-pms/docs/domain/reservations.md",
    "source_location": null,
    "weight": 1,
-   "source": "kiotel_pms_docs_domain_reservations_status_lifecycle",
+   "source": "kiotel_pms_docs_domain_reservations",
    "target": "kiotel_pms_core_backend_src_lib_property_enums_lifecycle_status"
   },
   {
@@ -300,16 +300,6 @@
    "weight": 1,
    "source": "kiosk_dashboard_windows_client_docs_protocol_commands",
    "target": "kiosk_dashboard_windows_client_kiosk_source_kiosk_frmmainscreen_kiosk_frmmainscreen_processcommand"
-  },
-  {
-   "relation": "references",
-   "confidence": "INFERRED",
-   "confidence_score": 0.75,
-   "source_file": "kiosk_dashboard_windows_client/docs/protocol/README.md",
-   "source_location": null,
-   "weight": 1,
-   "source": "kiosk_entity_socketio_protocol",
-   "target": "kiosk_dashboard_windows_client_kiosk_source_package_dependencies_socket_io_client"
   },
   {
    "relation": "references",
