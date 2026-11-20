@@ -51,9 +51,14 @@ COMMON_EXCLUDE_GLOBS = [
     "*.png", "*.PNG", "*.webp", "*.gif", "*.pdf", "*.resx", "*.zip", "*.tar", "*.gz",
     "*.7z", "*.woff", "*.woff2", "*.ttf", "*.otf", "*.eot", "*.pyc", "*.pyo", ".DS_Store",
     ".gitkeep",
-    # big generated data
-    "data.ts",
 ]
+
+# Exact path suffixes (matched against the full path, on a "/" boundary) for generated data
+# dumps. This must stay path-specific: a bare "data.ts" glob also dropped real source files,
+# e.g. kiotel-pms/core/frontend/lib/data.ts. Only the DB backup dump is excluded.
+EXCLUDE_PATH_SUFFIXES = (
+    "db/backup/data.ts",
+)
 
 # Repos in the kiotel-team org: name -> overrides.
 #   exclude_dirs : extra directory names to drop anywhere in the repo
@@ -105,6 +110,11 @@ def excluded_file(name: str) -> bool:
     return any(fnmatch.fnmatch(name, g) for g in COMMON_EXCLUDE_GLOBS)
 
 
+def excluded_path(fp: Path) -> bool:
+    posix = fp.as_posix()
+    return any(posix.endswith("/" + s) for s in EXCLUDE_PATH_SUFFIXES)
+
+
 def copy_tree(src: Path, dest: Path, extra_dirs: set, stats: dict, dry: bool) -> None:
     skip_dirs = COMMON_EXCLUDE_DIRS | extra_dirs
     for dp, dns, fns in os.walk(src):
@@ -112,7 +122,7 @@ def copy_tree(src: Path, dest: Path, extra_dirs: set, stats: dict, dry: bool) ->
         rel = Path(dp).relative_to(src)
         for fn in fns:
             fp = Path(dp) / fn
-            if excluded_file(fn):
+            if excluded_file(fn) or excluded_path(fp):
                 stats["skipped_pattern"] += 1
                 continue
             try:
@@ -199,6 +209,32 @@ def main() -> int:
     if not repos_dir.is_dir():
         print(f"ERROR: REPOS_DIR not found: {repos_dir}", file=sys.stderr)
         return 1
+
+    # Pre-flight: fail BEFORE touching build-root if anything the build needs is absent. A
+    # graph built from a partial set of repos looks fine but silently lacks whole repos.
+    unknown = [r for r in only_repos if r not in REPOS]
+    if unknown:
+        print(f"ERROR: unknown repo name(s): {', '.join(unknown)} "
+              f"(known: {', '.join(REPOS)})", file=sys.stderr)
+        return 2
+    problems = []
+    for name, cfg in REPOS.items():
+        if only_repos and name not in only_repos:
+            continue
+        src = repos_dir / name
+        if not src.is_dir():
+            problems.append(f"{name}: repo folder not found under {repos_dir}")
+            continue
+        for s, _ in cfg.get("only", ()):
+            if not (src / s).exists():
+                problems.append(f"{name}: required path not found: {s}")
+        if cfg.get("catalog") and not (src / "collections").is_dir():
+            problems.append(f"{name}: collections/ folder not found")
+    if problems:
+        print("ERROR: build aborted, build-root was NOT modified:", file=sys.stderr)
+        for p in problems:
+            print(f"  - {p}", file=sys.stderr)
+        return 2
 
     if not dry:
         print(f"› Resetting build root: {BUILD_ROOT}")
