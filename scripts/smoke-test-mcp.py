@@ -40,8 +40,15 @@ CHECKS = [
      "shortest_path", {"source": "call-token.routes.ts", "target": "httpChatAppGateway.js"},
      [r"call-token\.routes\.ts", r"httpChatAppGateway\.js"]),
     ("AI services -> transcription RunPod worker",
-     "shortest_path", {"source": "transcription_batches.py", "target": "rp_handler.py"},
+     # bare "rp_handler.py" is ambiguous (transcription AND vision workers): use the node id
+     "shortest_path", {"source": "transcription_batches.py",
+                       "target": "kiotel_transcription_service_src_rp_handler"},
      [r"transcription_batches\.py", r"rp_handler\.py"]),
+    ("AI services -> vision RunPod worker (kiotel_vision_ai_services)",
+     # two repos have an rp_handler.py, so name the vision one by its full path label
+     "shortest_path", {"source": "vision_runpod_service.py",
+                       "target": "kiotel_vision_ai_services/rp_handler.py"},
+     [r"vision_runpod_service\.py", r"kiotel_vision_ai_services/rp_handler\.py"]),
     ("Space -> UI kit import",
      "shortest_path", {"source": "ns-shell.tsx", "target": "kiotel_ui_kit/src/index.ts"},
      [r"ns-shell\.tsx", r"ui_kit|ui-kit"]),
@@ -106,6 +113,10 @@ async def run(base: str, key: str | None) -> int:
                     res = await s.call_tool(tool, args)
                     text = "\n".join(getattr(c, "text", "") for c in res.content)
                     missing = [p for p in patterns if not re.search(p, text, re.I)]
+                    # The server echoes the query inside error text, so name-matching alone can
+                    # pass on a failure: a path query must actually return a path.
+                    if tool == "shortest_path" and not re.search(r"Shortest path \(\d+ hops?\)", text):
+                        missing.append("an actual path (got: " + " ".join(text.split())[:60] + ")")
                     report(not res.isError and not missing, desc,
                            f"missing {missing}" if missing else "")
                     first = " ".join(text.split())[:220]
