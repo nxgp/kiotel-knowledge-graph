@@ -583,6 +583,50 @@
    "source_location": null,
    "weight": 1,
    "_evidence": "API catalog of kiotel_transcription_service's Bruno collection; linked to the repo's most-connected entry-point file (kiotel_transcription_service/src/rp_handler.py) so the catalog is reachable from the code it documents"
+  },
+  {
+   "source": "kiosk_ai_services_app_vision_runpod_service",
+   "target": "kiotel_vision_ai_services_rp_handler",
+   "relation": "calls",
+   "confidence": "EXTRACTED",
+   "confidence_score": 1,
+   "source_file": "kiosk_ai_services/app/vision_runpod_service.py",
+   "source_location": null,
+   "weight": 1,
+   "_evidence": "kiosk_ai_services submits each recorded video to the RunPod serverless endpoint (POST {base}/run, vision_runpod_service.py:92) with video_file + session_id; the worker handler is rp_handler.run (rp_handler.py:88, registered with runpod.serverless.start at :205); input contract is rp_schema.py. The worker was extracted from kiosk_ai_services Vision_audit/ (vision repo README)"
+  },
+  {
+   "source": "kiosk_ai_services_app_vision_batches",
+   "target": "kiotel_vision_ai_services_rp_handler",
+   "relation": "calls",
+   "confidence": "INFERRED",
+   "confidence_score": 0.85,
+   "source_file": "kiosk_ai_services/app/vision_batches.py",
+   "source_location": null,
+   "weight": 1,
+   "_evidence": "vision_batches.py sends accumulated clips to RunPod /batch API (module docstring); the batch requests run on the same vision worker (rp_handler.run)"
+  },
+  {
+   "source": "kiotel_dev_docs_kiotel_vision_ai_services",
+   "target": "kiotel_vision_ai_services_rp_handler",
+   "relation": "references",
+   "confidence": "INFERRED",
+   "confidence_score": 0.7,
+   "source_file": "kiotel_dev_docs/kiotel_vision_ai_services.md",
+   "source_location": null,
+   "weight": 1,
+   "_evidence": "API catalog of the vision worker Bruno collection (RunPod run/runsync/status/batch endpoints); linked to the worker entry point rp_handler.py"
+  },
+  {
+   "source": "kiotel_dev_docs_kiotel_vision_ai_services",
+   "target": "kiotel_vision_ai_services_readme",
+   "relation": "references",
+   "confidence": "INFERRED",
+   "confidence_score": 0.9,
+   "source_file": "kiotel_dev_docs/kiotel_vision_ai_services.md",
+   "source_location": null,
+   "weight": 1,
+   "_evidence": "Bruno collection kiotel_dev_docs/collections/kiotel_vision_ai_services documents the vision worker (collection name == repo name)"
   }
  ]
 }

@@ -1,6 +1,6 @@
 # Runbook — build the Kiotel knowledge graph & serve it as MCP
 
-This produces one combined Graphify knowledge graph across all **19 kiotel-team repos** and
+This produces one combined Graphify knowledge graph across all **20 kiotel-team repos** and
 wires it up as an MCP server the whole dev team can use. You run this locally (it uses your
 machine's AI assistant / API key for the semantic pass). ~1–2 h the first time (4.8k files).
 
@@ -8,7 +8,7 @@ machine's AI assistant / API key for the semantic pass). ~1–2 h the first time
 
 - **Python 3.10+**, and ideally [`uv`](https://docs.astral.sh/uv/) or `pipx`. Works on
   Windows (no `rsync` needed any more) as well as macOS/Linux.
-- **All 19 kiotel-team repos cloned side by side** in one folder (`REPOS_DIR`, default
+- **All 20 kiotel-team repos cloned side by side** in one folder (`REPOS_DIR`, default
   `../kiotel`), each under its GitHub name — see the table in `README.md`.
   `git pull` each one first so the graph reflects `main`.
 - **Docs already in each repo** — done: every repo has `README.md` + `docs/` (SYSTEM,
@@ -41,7 +41,7 @@ From this repo:
 # ./scripts/build-graph.sh --dry-run     # per-repo file/MB counts, copies nothing
 ```
 
-This copies the **source + docs** of all 19 repos into `./build-root/<repo-name>/` (via
+This copies the **source + docs** of all 20 repos into `./build-root/<repo-name>/` (via
 `scripts/assemble-build-root.py`), excluding deps, build output, binaries, models, secrets
 (`.env`, `api_key*`, keys, Postman environments — `*.example` templates are kept) and any
 file over 1 MB. Two repos are special-cased (see the `REPOS` table in the script):

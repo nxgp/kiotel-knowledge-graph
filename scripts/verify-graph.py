@@ -26,7 +26,8 @@ from pathlib import Path
 REPOS = [
     # kiosk platform
     "kiosk_dashboard", "kiosk_dashboard_windows_client", "kiosk_pms_autofill_extension",
-    "kiosk_ai_services", "kiotel_transcription_service", "kiosk_ai_avatar",
+    "kiosk_ai_services", "kiotel_transcription_service", "kiotel_vision_ai_services",
+    "kiosk_ai_avatar",
     # identity + workspace
     "kiotel_admin_central", "kiotel-space", "kiotel_communications_services",
     "kiotel_internal_operations_portal", "kiotel_internal_operations_backend", "kiotel_ui_kit",

@@ -1,14 +1,14 @@
 # kiotel-knowledge-graph
 
 A **combined knowledge graph of the entire Kiotel codebase** — built with
-[Graphify](https://github.com/Graphify-Labs/graphify) across all **19 kiotel-team repos** — served as a
+[Graphify](https://github.com/Graphify-Labs/graphify) across all **20 kiotel-team repos** — served as a
 **dockerized MCP server** so any dev's AI assistant (Claude Code, Cursor, Codex…) can query
 how the whole Kiotel estate fits together and *why*.
 
-**Current graph** (rebuilt 2026-11-20 across all 19 repos): **37,244 nodes · 94,435 edges ·
-1,661 communities**, with all 19 repos in one connected component. Provenance on every edge:
+**Current graph** (rebuilt 2026-11-20 across all 20 repos): **37,524 nodes · 94,800 edges ·
+1,716 communities**, with all 20 repos in one connected component. Provenance on every edge:
 97% EXTRACTED (structural fact), 3% INFERRED (including the curated concept→code and
-cross-repo bridges), 0% unresolved AMBIGUOUS. Coverage: 98.8% of the 4,638-file corpus (the
+cross-repo bridges), 0% unresolved AMBIGUOUS. Coverage: 98.8% of the 4,729-file corpus (the
 gaps are JSON data/fixtures and a few docs with no extractable structure; `verify-graph.py`
 lists them). Verifier result: **PASS**.
 
@@ -29,7 +29,7 @@ RUNBOOK.md                   step-by-step: build the graph, serve it, deploy it
 Dockerfile                   packages graph.json behind Streamable HTTP MCP on :8080
 docker-compose.yml           one-command local/prod serving
 docs/mcp-architecture.html   visual doc: architecture diagram, MCP tools, query flow
-scripts/build-graph.sh       entry point: assembles the build root of all 19 repos' source + docs
+scripts/build-graph.sh       entry point: assembles the build root of all 20 repos' source + docs
 scripts/assemble-build-root.py   the cross-platform copier (per-repo rules live in its REPOS table)
 scripts/apply-graph-repairs.py   post-build repairs + applies both bridge files
 scripts/bridges.json         concept→code bridges (doc/concept node → the code it describes)
@@ -45,7 +45,7 @@ graphify-out/                the built graph: graph.json (served), graph.html (v
 mcp/claude-code-mcp.md       per-assistant wiring + query patterns & known corpus issues
 ```
 
-## The 19 repos it graphs
+## The 20 repos it graphs
 
 Each repo is graphed under its **current kiotel-team name**; `source_file` paths and node ids
 start with that name.
@@ -58,6 +58,7 @@ start with that name.
 | `kiosk_pms_autofill_extension` | Chrome MV3 extension; OAuth2 PKCE, autofills guest data into PMS screens | `kiotel_pms_autofill` |
 | `kiosk_ai_services` | records + AI-audits each call (FastAPI, Deepgram/RunPod, LLM audit → `session_ai_audit`); now also holds the STT/translation prototypes | `audio_services`, `stt_tts_inhouse`, `guest_translation` |
 | `kiotel_transcription_service` | RunPod serverless WhisperX worker (transcription + diarization) | `speech_to_text_serverless` |
+| `kiotel_vision_ai_services` | **new** — RunPod serverless vision worker: analyses a recorded front-desk video and returns a plain-English summary; extracted from `kiosk_ai_services`' old `Vision_audit/` folder, which still calls it | — |
 | `kiosk_ai_avatar` | **new** — standalone LLM + TTS + MuseTalk lip-sync avatar prototype | — |
 
 **Identity, workspace & internal suite:**
@@ -81,17 +82,17 @@ start with that name.
 | `kiotel_dev_docs` | **new** — Bruno API collections, condensed to one API-catalog per service | — |
 
 `kiotel_dev_docs` is 3,400+ Bruno YAML request files; the build condenses each collection into
-one `METHOD url — name` markdown catalog, which is linked to the service's entry point. It also
-holds a collection for `kiotel_vision_ai_services`, a repo that is not among the 19.
+one `METHOD url — name` markdown catalog, which is linked to the service's entry point.
 
 Graphify's structural pass (tree-sitter AST, plus SQL/HCL parsers) discovers *what connects to
 what*; the docs supply *why*. On top of that this repo adds **bridges** — curated edges that
 join the repos into one queryable component:
 
-- `scripts/cross-repo-bridges.json` — **53** cross-repo edges. 15 carried over from the
-  2026-08 deep-read (re-keyed to current names, all still resolve), 5 new code-level ones
+- `scripts/cross-repo-bridges.json` — **57** cross-repo edges. 15 carried over from the
+  2026-08 deep-read (re-keyed to current names, all still resolve), 7 new code-level ones
   grounded in file+line evidence (payments → PMS aggregator folio API, Space → communications
-  call-token contract, Space → UI kit, AI services → transcription RunPod worker, kiosk ↔ avatar),
+  call-token contract, Space → UI kit, AI services → transcription RunPod worker, AI services →
+  vision RunPod worker (2 edges), kiosk ↔ avatar),
   and the API-catalog links for `kiotel_dev_docs`.
 - `scripts/bridges.json` — **47** concept→code edges, re-anchored onto the current doc/concept
   nodes. 47 of the original 94 had no counterpart in the rewritten docs (or the code they pointed to was
@@ -125,7 +126,7 @@ Without Docker: `pip install "graphifyy[mcp]==0.9.25" "mcp<2" && python -m graph
 
 ## Rebuild / refresh the graph
 
-Full steps in [`RUNBOOK.md`](RUNBOOK.md). Short version (all 19 repos cloned side by side):
+Full steps in [`RUNBOOK.md`](RUNBOOK.md). Short version (all 20 repos cloned side by side):
 
 ```bash
 REPOS_DIR=/path/to/clones ./scripts/build-graph.sh      # assemble build-root/ (add --dry-run to preview)
@@ -161,7 +162,7 @@ server — same `/mcp` protocol, plus:
     clients, and a recent-activity feed. Auto-refreshes every 10s.
   - **Graph**: the actual node/edge visualization — graphify's own interactive
     `graph export html` output, embedded live (lazy-loaded on first click). Aggregated
-    community view (1,661 communities), since the full 37k-node graph is too dense to
+    community view (1,716 communities), since the full 37k-node graph is too dense to
     render node-by-node in a browser; search, click-to-inspect, and the community
     checklist all work exactly as they do when opening `graphify-out/graph.html` directly.
 - **`/graph`** — that same visualization, servable/linkable on its own.

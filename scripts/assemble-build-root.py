@@ -87,6 +87,8 @@ REPOS = {
     "kiosk_pms_autofill_extension": {},
     "kiosk_ai_services": {},
     "kiotel_transcription_service": {"exclude_dirs": {"models"}},
+    # RunPod serverless worker that summarises kiosk call video (called by kiosk_ai_services)
+    "kiotel_vision_ai_services": {"exclude_dirs": {"models"}},
     "kiosk_ai_avatar": {"exclude_dirs": {"data", "generated", "results"}},
     # --- identity + workspace ---
     "kiotel_admin_central": {},

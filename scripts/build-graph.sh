@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# build-graph.sh — assemble a clean "build root" containing the source + docs of all 19
+# build-graph.sh — assemble a clean "build root" containing the source + docs of all 20
 # kiotel-team repos, so Graphify can build ONE combined knowledge graph across the estate.
 #
 # It does NOT run Graphify (that's your step — see RUNBOOK.md), because Graphify's semantic
@@ -12,7 +12,7 @@
 # rules are in the REPOS table at the top of that file.
 #
 # Usage:
-#   REPOS_DIR=/path/to/folder/holding/all/19/clones ./scripts/build-graph.sh
+#   REPOS_DIR=/path/to/folder/holding/all/20/clones ./scripts/build-graph.sh
 #   ./scripts/build-graph.sh --dry-run        # report counts only, copy nothing
 #   ./scripts/build-graph.sh kiotel_ui_kit    # refresh ONE repo in build-root, keep the others
 #                                             # (no names = wipe and rebuild the whole build-root)
