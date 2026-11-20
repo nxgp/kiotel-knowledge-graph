@@ -14,7 +14,8 @@
 # Usage:
 #   REPOS_DIR=/path/to/folder/holding/all/19/clones ./scripts/build-graph.sh
 #   ./scripts/build-graph.sh --dry-run        # report counts only, copy nothing
-#   ./scripts/build-graph.sh kiotel_ui_kit    # (re)assemble a single repo's files
+#   ./scripts/build-graph.sh kiotel_ui_kit    # refresh ONE repo in build-root, keep the others
+#                                             # (no names = wipe and rebuild the whole build-root)
 #
 # REPOS_DIR defaults to ../kiotel (a sibling of this repo). Each repo must be cloned there
 # under its kiotel-team name, e.g. $REPOS_DIR/kiosk_dashboard, $REPOS_DIR/kiotel-space.

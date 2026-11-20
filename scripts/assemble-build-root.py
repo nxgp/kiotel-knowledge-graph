@@ -8,9 +8,13 @@ deterministic, stdlib only.
     python scripts/assemble-build-root.py                    # REPOS_DIR defaults to ../kiotel
     REPOS_DIR=/path/to/clones python scripts/assemble-build-root.py
     python scripts/assemble-build-root.py --dry-run          # report only, copy nothing
+    python scripts/assemble-build-root.py kiotel_ui_kit      # refresh ONE repo, keep the others
 
 Every repo is copied to build-root/<repo-name>/ under its CURRENT kiotel-team name, so node
 IDs and `source_file` paths in the graph match what developers see on GitHub.
+
+With no repo names the whole build-root is wiped and rebuilt. With one or more repo names only
+those repos' folders are replaced and every other repo in build-root is left untouched.
 
 Exclusion layers (the graph should hold source + docs, never deps/binaries/secrets):
   1. COMMON_EXCLUDE_DIRS / COMMON_EXCLUDE_GLOBS apply to every repo
@@ -237,10 +241,21 @@ def main() -> int:
         return 2
 
     if not dry:
-        print(f"› Resetting build root: {BUILD_ROOT}")
-        if BUILD_ROOT.exists():
-            shutil.rmtree(BUILD_ROOT)
-        BUILD_ROOT.mkdir(parents=True)
+        if only_repos:
+            # Partial run: replace ONLY the named repos' folders and keep every other repo
+            # already in build-root. (Wiping the whole root here would leave a graph input
+            # with just the one repo.)
+            BUILD_ROOT.mkdir(parents=True, exist_ok=True)
+            print(f"› Refreshing {', '.join(only_repos)} in {BUILD_ROOT} (other repos kept)")
+            for name in only_repos:
+                if (BUILD_ROOT / name).exists():
+                    shutil.rmtree(BUILD_ROOT / name)
+        else:
+            # Full run: start clean so nothing stale (a removed repo, a deleted file) survives.
+            print(f"› Resetting build root: {BUILD_ROOT}")
+            if BUILD_ROOT.exists():
+                shutil.rmtree(BUILD_ROOT)
+            BUILD_ROOT.mkdir(parents=True)
 
     total = {"files": 0, "bytes": 0}
     missing = []
