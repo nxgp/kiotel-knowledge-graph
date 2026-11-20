@@ -148,6 +148,56 @@ Re-run steps 2–4. Graphify supports `--update` to re-extract only changed file
 subsequent builds are fast. Consider a CI job (there's a community `code-review-graph`
 action) that rebuilds on merge to keep the graph current.
 
+## Smoke-test the MCP server before merging / deploying
+
+Start the server exactly as production does (`mcp/metrics_server.py`), then run the smoke test.
+No Docker needed; with Docker, `docker compose up -d` serves the same code on :8080.
+
+```powershell
+# PowerShell (adjust the python path); bash users: export the same variables
+$env:GRAPH_PATH="graphify-out\graph.json"; $env:FILE_SIZES="graphify-out\file-sizes.json"
+$env:CORPUS_MANIFEST="graphify-out\manifest.json"; $env:BUILD_COST_JSON="graphify-out\cost.json"
+$env:DASHBOARD_HTML="mcp\dashboard.html"; $env:GRAPH_VIZ_HTML="graphify-out\graph.html"
+$env:METRICS_DB="$env:TEMP\metrics.db"; $env:PORT="8081"
+python mcp\metrics_server.py            # leave running
+
+python scripts/smoke-test-mcp.py http://localhost:8081   # in another terminal; exits non-zero on failure
+```
+
+It checks `/healthz`, `/stats`, `/dashboard`, `/graph`, that all 10 MCP tools exist, and that real
+cross-repo questions come back citing the right repos/files (payments → PMS aggregator, Space call
+token → communications gateway, AI services → transcription worker, Space → UI kit,
+`session_ai_audit`, kiosk ↔ platform). Point it at the deployed URL (`--api-key`) after a deploy.
+
+## Large graph.json (Git LFS evaluation, 2026-11-20)
+
+`graphify-out/graph.json` is committed as a plain file and is the largest artifact in the repo.
+
+| Fact | Value |
+|---|---|
+| Size now | ~50.3 MB raw (already past GitHub's ~50 MB warning line); ~2.1 MB gzip-compressed |
+| `.git` size with 7 historic versions | 5.5 MB (git stores it compressed), so each rebuild adds roughly 2 MB |
+| GitHub limits | regular files over 100 MB are rejected (a warning appears around 50 MB: commonly documented, confirm in [GitHub's docs](https://docs.github.com/en/repositories/working-with-files/managing-large-files/about-git-large-file-storage)); LFS allows files up to 2 GB on Free/Pro |
+| LFS cost | storage + bandwidth quotas apply and are billed past the included amount ([GitHub LFS billing](https://docs.github.com/en/billing/concepts/product-billing/git-lfs)); older docs quote 1 GB, current docs 10 GiB on Free, so confirm for the `nxgp` org |
+| How production is deployed | `scripts/deploy-do.sh` builds the image **locally** and pushes it to DOCR; App Platform never clones this repo, so LFS does not affect the live deploy |
+
+**Recommendation: do not enable LFS yet.** The file is under the 100 MB limit and its history cost
+is small, but it has crossed ~50 MB, so plan option 1 below before it nears 100 MB. LFS would also break the "no build required" path in the README: `git clone` without
+git-lfs installed gives a ~130-byte pointer file in place of `graph.json`, and `docker compose
+up` would then build an image that fails at startup. Every consumer, CI job and the deploy
+machine would need `git lfs install` + `git lfs pull`.
+
+`verify-graph.py` now has a size guard: it prints a warning at 45 MB and **fails the run at
+95 MB**, so the switch is planned rather than discovered by a rejected push. If it trips, in
+order of preference:
+
+1. **Commit a compressed artifact**: store `graph.json.gz` (~2 MB) and `gunzip` it in the
+   Dockerfile (`RUN gunzip -k graph.json.gz` before use). No extra tooling for consumers.
+2. **Git LFS**: `git lfs track "graphify-out/graph.json"`, commit `.gitattributes`, and update the
+   README/Dockerfile/CI to run `git lfs pull`. Do **not** run `git lfs migrate import` on a shared
+   branch (it rewrites history); that is Ravi's call.
+3. **Stop committing it**: publish `graph.json` as a release asset or only in the DOCR image.
+
 ## Troubleshooting
 
 - **Build root is huge / slow** → run `./scripts/build-graph.sh --dry-run`; the Windows

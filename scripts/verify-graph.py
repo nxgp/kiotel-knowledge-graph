@@ -53,7 +53,21 @@ def main(graph_path: str, build_root: str) -> int:
     ids = {n["id"] for n in nodes}
     fail = False
 
-    print(f"GRAPH: {len(nodes):,} nodes, {len(edges):,} edges\n")
+    print(f"GRAPH: {len(nodes):,} nodes, {len(edges):,} edges")
+
+    # 0. SIZE GUARD - graph.json is committed as a plain file. GitHub warns on files over
+    #    ~50 MB and rejects files over 100 MB. When this trips, see RUNBOOK "Large graph.json".
+    size_mb = Path(graph_path).stat().st_size / 1e6
+    if size_mb >= 95:
+        print(f"SIZE: graph.json is {size_mb:.1f} MB - over the 95 MB guard (GitHub rejects >100 MB). "
+              "Switch to Git LFS or a compressed artifact (RUNBOOK 'Large graph.json').")
+        fail = True
+    elif size_mb >= 45:
+        print(f"SIZE: graph.json is {size_mb:.1f} MB - nearing GitHub's 50 MB warning / 100 MB limit; "
+              "plan the switch (RUNBOOK 'Large graph.json').")
+    else:
+        print(f"SIZE: graph.json {size_mb:.1f} MB (ok)")
+    print()
 
     # 1 + 2. coverage and per-repo counts
     covered = {n.get("source_file", "") for n in nodes if n.get("source_file")}
