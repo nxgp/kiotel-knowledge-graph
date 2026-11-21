@@ -1,7 +1,7 @@
 # .graphifyignore — patterns (gitignore syntax) for the Kiotel combined graph build root.
-# Keeps Graphify focused on source + docs; excludes deps, build output, binaries, and
-# large generated/data files. (The build script also excludes most of these via rsync;
-# this is the second line of defence.)
+# Keeps Graphify focused on source + docs; excludes deps, build output, binaries, secrets and
+# large generated/data files. (scripts/assemble-build-root.py already applies the same
+# rules while copying; this is the second line of defence.)
 
 # --- version control / dependencies / build output ---
 .git/
@@ -18,32 +18,60 @@ __pycache__/
 *.pyd
 .venv/
 venv/
+.cache/
+coverage/
 
 # --- lockfiles & large generated files ---
 package-lock.json
 *-lock.json
 yarn.lock
 pnpm-lock.yaml
+uv.lock
+*.lock
 *.min.js
 *.map
 
-# --- secrets (keep .env.example, drop real env) ---
+# --- secrets (keep *.example templates, drop anything real) ---
 .env
-.env.local
-.env.*.local
+.env.*
+*.env
+!*.example
+api_key*
+*.pem
+*.key
+*.p12
+*.pfx
+*.jks
+*.keystore
+id_rsa*
+credentials*.json
+*postman_environment.json
 
-# --- binaries, models, media (esp. the hardware kiosk publish output) ---
+# --- databases, backups, dumps ---
+db-backup/
+*.sqlite
+*.sqlite3
+*.db
+core/backend/src/db/backup/data.ts
+**/db/backup/data.ts
+
+# --- binaries, models, media (esp. the Windows kiosk publish output) ---
 *.dll
 *.exe
+*.pdb
 *.so
 *.dylib
 *.onnx
 *.pt
 *.pth
 *.bin
+*.safetensors
 *.dat
 *.data
 *.traineddata
+*.deploy
+*.msi
+*.nupkg
 *.mp4
 *.mov
 *.wav
@@ -58,10 +86,15 @@ pnpm-lock.yaml
 *.gif
 *.pdf
 *.resx
-
-# --- large data dumps we don't want in the graph ---
-core/backend/src/db/backup/data.ts
-**/db/backup/data.ts
+*.zip
+*.tar
+*.gz
+*.7z
+*.woff
+*.woff2
+*.ttf
+*.otf
+*.eot
 
 # --- graph output itself ---
 graphify-out/

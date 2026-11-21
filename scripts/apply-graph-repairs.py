@@ -33,48 +33,48 @@ _XREPO = json.loads((HERE / "cross-repo-bridges.json").read_text(encoding="utf-8
 CROSS_REPO_BRIDGES = [{k: v for k, v in b.items() if not k.startswith("_")} for b in _XREPO]
 
 ALIASES = {
-    "ref_kiotel_shared": "kiotel_web_core_shared_src_index",
-    "kiotel_web_core_frontend_public_next": "kiotel_web_core_frontend_public_next_nextjs_logo",
-    "kiotel_web_core_frontend_public_vercel_vercel_logo": "kiotel_web_core_frontend_public_vercel",
-    "kiotel_web_core_frontend_public_file_file_icon": "kiotel_web_core_frontend_public_file",
-    "kiotel_web_core_frontend_public_globe_globe_icon": "kiotel_web_core_frontend_public_globe",
-    "kiotel_web_core_frontend_app_page_page": "kiotel_web_core_frontend_src_app_page",
-    "kiotel_web_core_frontend_app_page": "kiotel_web_core_frontend_src_app_page",
+    "ref_kiotel_shared": "kiosk_dashboard_core_shared_src_index",
+    "kiosk_dashboard_core_frontend_public_next": "kiosk_dashboard_core_frontend_public_next_nextjs_logo",
+    "kiosk_dashboard_core_frontend_public_vercel_vercel_logo": "kiosk_dashboard_core_frontend_public_vercel",
+    "kiosk_dashboard_core_frontend_public_file_file_icon": "kiosk_dashboard_core_frontend_public_file",
+    "kiosk_dashboard_core_frontend_public_globe_globe_icon": "kiosk_dashboard_core_frontend_public_globe",
+    "kiosk_dashboard_core_frontend_app_page_page": "kiosk_dashboard_core_frontend_src_app_page",
+    "kiosk_dashboard_core_frontend_app_page": "kiosk_dashboard_core_frontend_src_app_page",
 }
 
 # (source, target) pairs verified FALSE against source code — always delete.
 FALSIFIED = {
     ("kiotel_pms_core_frontend_public_icons_icon_512", "kiotel_pms_core_frontend_public_sw"),
     ("kiotel_pms_core_frontend_public_sw", "kiotel_pms_core_frontend_public_icons_icon_192"),
-    ("kiotel_web_core_frontend_src_app_page", "kiotel_web_core_frontend_public_file"),
-    ("kiotel_web_core_frontend_src_app_page", "kiotel_web_core_frontend_public_next_nextjs_logo"),
-    ("kiotel_web_core_frontend_src_app_page", "kiotel_web_core_frontend_public_vercel"),
+    ("kiosk_dashboard_core_frontend_src_app_page", "kiosk_dashboard_core_frontend_public_file"),
+    ("kiosk_dashboard_core_frontend_src_app_page", "kiosk_dashboard_core_frontend_public_next_nextjs_logo"),
+    ("kiosk_dashboard_core_frontend_src_app_page", "kiosk_dashboard_core_frontend_public_vercel"),
 }
 
 # (source, target) -> (source_file, source_location) verified TRUE — upgrade to EXTRACTED.
 VERIFIED = {
-    ("audio_services_stt_tts_using_api_only_readme_audio_translate_service",
-     "audio_services_k_trans_pipe_main_readme_elevenlabs_scribe_stt"): (None, None),
-    ("kiotel_web_core_backend_public_welcomepage_welcome_page",
-     "kiotel_hardware_docs_architecture_webview2_thin_shell"):
-        ("kiotel_hardware/kiosk_Source/kiosk/frmMainScreen.cs", "L464"),
+    ("kiosk_ai_services_stt_tts_using_api_only_readme_audio_translate_service",
+     "kiosk_ai_services_k_trans_pipe_main_readme_elevenlabs_scribe_stt"): (None, None),
+    ("kiosk_dashboard_core_backend_public_welcomepage_welcome_page",
+     "kiosk_dashboard_windows_client_docs_architecture_webview2_thin_shell"):
+        ("kiosk_dashboard_windows_client/kiosk_Source/kiosk/frmMainScreen.cs", "L464"),
 }
 
 # Nodes graphify cannot extract (symbol-less configs) but that carry real system wiring.
 EXTRA_NODES = [
-    {"id": "kiotel_web_core_backend_src_config_env_env",
+    {"id": "kiosk_dashboard_core_backend_src_config_env_env",
      "label": "env (validated config object)", "file_type": "code",
-     "source_file": "kiotel_web/core/backend/src/config/env.ts", "source_location": "L1"},
+     "source_file": "kiosk_dashboard/core/backend/src/config/env.ts", "source_location": "L1"},
     # NOTE: id carries a _json suffix — the bare stem collides with AppSettings.cs (the
     # C# class that loads this file).
-    {"id": "kiotel_hardware_kiosk_source_kiosk_appsettings_json",
+    {"id": "kiosk_dashboard_windows_client_kiosk_source_kiosk_appsettings_json",
      "label": "Kiosk runtime settings (appsettings.json) — BackendUrl + AudioServiceUrl point at the platform",
      "file_type": "document",
-     "source_file": "kiotel_hardware/kiosk_Source/kiosk/appsettings.json", "source_location": "L1"},
-    {"id": "kiotel_hardware_kiosk_source_backupoptions",
+     "source_file": "kiosk_dashboard_windows_client/kiosk_Source/kiosk/appsettings.json", "source_location": "L1"},
+    {"id": "kiosk_dashboard_windows_client_kiosk_source_backupoptions",
      "label": "Device provisioning backup (backupoptions.json) — COM port + agent identity snapshot",
      "file_type": "document",
-     "source_file": "kiotel_hardware/kiosk_Source/backupoptions.json", "source_location": "L1"},
+     "source_file": "kiosk_dashboard_windows_client/kiosk_Source/backupoptions.json", "source_location": "L1"},
     {"id": "kiotel_pms_deploy_spaces_kiotel_storage_policy",
      "label": "Spaces bucket policy (kiotel-storage) — public read for property logos/images",
      "file_type": "document",
@@ -82,69 +82,69 @@ EXTRA_NODES = [
     # wave-2 symbol-less artifacts worth being queryable (JSON configs / trained schemas that
     # AST/semantic passes skip but carry real meaning — esp. the chatbot's NL->SQL schema
     # behind a critical security finding).
-    {"id": "chatbot_services_customer_module_schema_schema_context",
+    {"id": "kiotel_chatbot_service_services_customer_module_schema_schema_context",
      "label": "chatbot NL->SQL trained schema (schema_context.json) — includes sensitive kiosk tables: app_secrets, device_oauth, ext_oauth_codes, external_api_clients",
      "file_type": "document",
-     "source_file": "chatbot/services/customer_module/schema/schema_context.json", "source_location": "L1"},
-    {"id": "chatbot_services_customer_module_schema_training_examples",
+     "source_file": "kiotel_chatbot_service/services/customer_module/schema/schema_context.json", "source_location": "L1"},
+    {"id": "kiotel_chatbot_service_services_customer_module_schema_training_examples",
      "label": "chatbot NL->SQL training examples (question->SQL pairs)", "file_type": "document",
-     "source_file": "chatbot/services/customer_module/schema/training_examples.json", "source_location": "L1"},
-    {"id": "chatbot_services_customer_module_schema_documentation",
+     "source_file": "kiotel_chatbot_service/services/customer_module/schema/training_examples.json", "source_location": "L1"},
+    {"id": "kiotel_chatbot_service_services_customer_module_schema_documentation",
      "label": "chatbot NL->SQL schema documentation", "file_type": "document",
-     "source_file": "chatbot/services/customer_module/schema/documentation.json", "source_location": "L1"},
+     "source_file": "kiotel_chatbot_service/services/customer_module/schema/documentation.json", "source_location": "L1"},
     {"id": "kiotel_lox_kiotel_lox_application_appsettings_json",
      "label": "Lox Windows agent settings (appsettings.json) — API base + device config", "file_type": "document",
      "source_file": "kiotel_lox/kiotel_lox_application/appsettings.json", "source_location": "L1"},
-    {"id": "kiotel_pms_autofill_managed_schema",
+    {"id": "kiosk_pms_autofill_extension_managed_schema",
      "label": "Autofill enterprise-policy schema (managed_schema.json) — apiBase/dashboardBase overrides", "file_type": "document",
-     "source_file": "kiotel_pms_autofill/managed_schema.json", "source_location": "L1"},
+     "source_file": "kiosk_pms_autofill_extension/managed_schema.json", "source_location": "L1"},
 ]
 
 EXTRA_EDGES = [
     # appsettings.json literally hardcodes the platform + audio service URLs
-    {"source": "kiotel_hardware_kiosk_source_kiosk_appsettings_json",
-     "target": "audio_services_docs_system_kiotel_web",
+    {"source": "kiosk_dashboard_windows_client_kiosk_source_kiosk_appsettings_json",
+     "target": "kiosk_ai_services_docs_system_kiotel_web",
      "relation": "references", "confidence": "EXTRACTED", "confidence_score": 1.0,
-     "source_file": "kiotel_hardware/kiosk_Source/kiosk/appsettings.json", "source_location": "L2", "weight": 1.0},
-    {"source": "kiotel_hardware_kiosk_source_kiosk_appsettings_json",
-     "target": "audio_services_readme_audio_ingest_service",
+     "source_file": "kiosk_dashboard_windows_client/kiosk_Source/kiosk/appsettings.json", "source_location": "L2", "weight": 1.0},
+    {"source": "kiosk_dashboard_windows_client_kiosk_source_kiosk_appsettings_json",
+     "target": "kiosk_ai_services_readme_audio_ingest_service",
      "relation": "references", "confidence": "EXTRACTED", "confidence_score": 1.0,
-     "source_file": "kiotel_hardware/kiosk_Source/kiosk/appsettings.json", "source_location": "L3", "weight": 1.0},
+     "source_file": "kiosk_dashboard_windows_client/kiosk_Source/kiosk/appsettings.json", "source_location": "L3", "weight": 1.0},
     # AppSettings.cs is the loader of appsettings.json
-    {"source": "kiotel_hardware_kiosk_source_kiosk_appsettings",
-     "target": "kiotel_hardware_kiosk_source_kiosk_appsettings_json",
+    {"source": "kiosk_dashboard_windows_client_kiosk_source_kiosk_appsettings",
+     "target": "kiosk_dashboard_windows_client_kiosk_source_kiosk_appsettings_json",
      "relation": "references", "confidence": "EXTRACTED", "confidence_score": 1.0,
-     "source_file": "kiotel_hardware/kiosk_Source/kiosk/AppSettings.cs", "source_location": None, "weight": 1.0},
-    {"source": "kiotel_hardware_kiosk_source_backupoptions",
-     "target": "kiotel_hardware_kiosk_source_kiosk_devicemanager_kiosk_devicemanager",
+     "source_file": "kiosk_dashboard_windows_client/kiosk_Source/kiosk/AppSettings.cs", "source_location": None, "weight": 1.0},
+    {"source": "kiosk_dashboard_windows_client_kiosk_source_backupoptions",
+     "target": "kiosk_dashboard_windows_client_kiosk_source_kiosk_devicemanager_kiosk_devicemanager",
      "relation": "conceptually_related_to", "confidence": "INFERRED", "confidence_score": 0.75,
-     "source_file": "kiotel_hardware/kiosk_Source/backupoptions.json", "source_location": None, "weight": 1.0},
+     "source_file": "kiosk_dashboard_windows_client/kiosk_Source/backupoptions.json", "source_location": None, "weight": 1.0},
     {"source": "kiotel_pms_deploy_spaces_kiotel_storage_policy",
      "target": "kiotel_pms_deploy_readme_kiotel_storage_spaces",
      "relation": "references", "confidence": "EXTRACTED", "confidence_score": 1.0,
      "source_file": "kiotel-pms/deploy/spaces/kiotel-storage-policy.json", "source_location": None, "weight": 1.0},
-    # audio docs' session_ai_audit concept IS the kiotel_web DB table (extract-db-schema-nodes.py)
-    {"source": "audio_services_docs_data_model_session_ai_audit",
-     "target": "kiotel_web_db_table_session_ai_audit",
+    # audio docs' session_ai_audit concept IS the kiosk_dashboard DB table (extract-db-schema-nodes.py)
+    {"source": "kiosk_ai_services_docs_data_model_session_ai_audit",
+     "target": "kiosk_dashboard_db_table_session_ai_audit",
      "relation": "semantically_similar_to", "confidence": "INFERRED", "confidence_score": 0.95,
-     "source_file": "audio_services/docs/DATA_MODEL.md", "source_location": None, "weight": 1.0},
+     "source_file": "kiosk_ai_services/docs/DATA_MODEL.md", "source_location": None, "weight": 1.0},
     # wire the wave-2 artifact nodes so they aren't orphans
-    {"source": "chatbot_services_customer_module_src_db", "target": "chatbot_services_customer_module_schema_schema_context",
+    {"source": "kiotel_chatbot_service_services_customer_module_src_db", "target": "kiotel_chatbot_service_services_customer_module_schema_schema_context",
      "relation": "references", "confidence": "EXTRACTED", "confidence_score": 1.0,
-     "source_file": "chatbot/services/customer_module/src/db.py", "source_location": None, "weight": 1.0},
-    {"source": "chatbot_services_customer_module_schema_training_examples", "target": "chatbot_services_customer_module_schema_schema_context",
+     "source_file": "kiotel_chatbot_service/services/customer_module/src/db.py", "source_location": None, "weight": 1.0},
+    {"source": "kiotel_chatbot_service_services_customer_module_schema_training_examples", "target": "kiotel_chatbot_service_services_customer_module_schema_schema_context",
      "relation": "references", "confidence": "EXTRACTED", "confidence_score": 1.0,
-     "source_file": "chatbot/services/customer_module/schema/training_examples.json", "source_location": None, "weight": 1.0},
-    {"source": "chatbot_services_customer_module_schema_documentation", "target": "chatbot_services_customer_module_schema_schema_context",
+     "source_file": "kiotel_chatbot_service/services/customer_module/schema/training_examples.json", "source_location": None, "weight": 1.0},
+    {"source": "kiotel_chatbot_service_services_customer_module_schema_documentation", "target": "kiotel_chatbot_service_services_customer_module_schema_schema_context",
      "relation": "references", "confidence": "EXTRACTED", "confidence_score": 1.0,
-     "source_file": "chatbot/services/customer_module/schema/documentation.json", "source_location": None, "weight": 1.0},
+     "source_file": "kiotel_chatbot_service/services/customer_module/schema/documentation.json", "source_location": None, "weight": 1.0},
     # the chatbot's trained schema names the platform's sensitive tables (the security finding, made queryable)
-    {"source": "chatbot_services_customer_module_schema_schema_context", "target": "kiotel_web_core_backend_src_db_db_schema_view",
+    {"source": "kiotel_chatbot_service_services_customer_module_schema_schema_context", "target": "kiosk_dashboard_core_backend_src_db_db_schema_view",
      "relation": "shares_data_with", "confidence": "EXTRACTED", "confidence_score": 1.0,
-     "source_file": "chatbot/services/customer_module/schema/schema_context.json", "source_location": None, "weight": 1.0},
-    {"source": "kiotel_pms_autofill_managed_schema", "target": "kiotel_pms_autofill_background",
+     "source_file": "kiotel_chatbot_service/services/customer_module/schema/schema_context.json", "source_location": None, "weight": 1.0},
+    {"source": "kiosk_pms_autofill_extension_managed_schema", "target": "kiosk_pms_autofill_extension_background",
      "relation": "references", "confidence": "EXTRACTED", "confidence_score": 1.0,
-     "source_file": "kiotel_pms_autofill/managed_schema.json", "source_location": None, "weight": 1.0},
+     "source_file": "kiosk_pms_autofill_extension/managed_schema.json", "source_location": None, "weight": 1.0},
     {"source": "kiotel_lox_kiotel_lox_application_program", "target": "kiotel_lox_kiotel_lox_application_appsettings_json",
      "relation": "references", "confidence": "EXTRACTED", "confidence_score": 1.0,
      "source_file": "kiotel_lox/kiotel_lox_application/Program.cs", "source_location": None, "weight": 1.0},
@@ -152,8 +152,8 @@ EXTRA_EDGES = [
 
 # node id -> metadata patches (verified against source)
 NODE_PATCHES = {
-    "audiofetcher": {"source_file": "audio_services/app/audit.py", "source_location": "L18"},
-    "kiotel_web_core_frontend_public_globe": {"source_file": "kiotel_web/core/frontend/public/globe.svg"},
+    "audiofetcher": {"source_file": "kiosk_ai_services/app/audit.py", "source_location": "L18"},
+    "kiosk_dashboard_core_frontend_public_globe": {"source_file": "kiosk_dashboard/core/frontend/public/globe.svg"},
 }
 
 
@@ -178,7 +178,7 @@ def main(path: str) -> None:
                 return cand
         return None
 
-    internal = ("kiotel_web", "kiotel_pms", "kiotel_hardware", "audio_services")
+    internal = ("kiosk_dashboard", "kiotel_pms", "kiosk_dashboard_windows_client", "kiosk_ai_services")
     for e in edges:
         for side in ("source", "target"):
             v = e[side]

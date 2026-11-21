@@ -1,18 +1,16 @@
 # Runbook — build the Kiotel knowledge graph & serve it as MCP
 
-This produces one combined Graphify knowledge graph across all four Kiotel repos and wires
-it up as an MCP server the whole dev team can use. You run this locally (it uses your
-machine's AI assistant / API key for the semantic pass). ~15–30 min the first time.
+This produces one combined Graphify knowledge graph across all **20 kiotel-team repos** and
+wires it up as an MCP server the whole dev team can use. You run this locally (it uses your
+machine's AI assistant / API key for the semantic pass). ~1–2 h the first time (4.8k files).
 
 ## Prerequisites
 
-- **Python 3.10+**, and ideally [`uv`](https://docs.astral.sh/uv/) or `pipx`.
-- The four Kiotel repos checked out locally. Defaults assume:
-  - `~/kiotel_web`
-  - `~/Downloads/kiotel-pms-main`
-  - `~/Downloads/kiotel_dashboard_audio_services-main`
-  - `~/kiotel_hardware`
-  (Override with env vars — see step 2.)
+- **Python 3.10+**, and ideally [`uv`](https://docs.astral.sh/uv/) or `pipx`. Works on
+  Windows (no `rsync` needed any more) as well as macOS/Linux.
+- **All 20 kiotel-team repos cloned side by side** in one folder (`REPOS_DIR`, default
+  `../kiotel`), each under its GitHub name — see the table in `README.md`.
+  `git pull` each one first so the graph reflects `main`.
 - **Docs already in each repo** — done: every repo has `README.md` + `docs/` (SYSTEM,
   ARCHITECTURE, DATA_MODEL/DEVICES, INTEGRATIONS). These are the semantic layer.
 - For the semantic pass, either **Claude Code installed** (recommended — uses your existing
@@ -26,6 +24,8 @@ uv tool install graphifyy      # recommended
 # or: pip install graphifyy
 
 graphify install               # one-time: registers the /graphify skill with Claude Code / Cursor / Codex
+pip install "graphifyy[sql,terraform]==0.9.25" networkx   # SQL/HCL parsers (150+ .sql files are
+                                                          # silently skipped without them) + verify-graph.py
 ```
 
 > Note the double-y package name: `graphifyy` (CLI command is `graphify`).
@@ -36,13 +36,24 @@ From this repo:
 
 ```bash
 ./scripts/build-graph.sh
-# override paths if yours differ:
-# WEB=~/code/kiotel_web PMS=~/code/kiotel-pms AUDIO=~/code/audio_services HW=~/code/kiotel_hardware ./scripts/build-graph.sh
+# point at your clones if they are not in ../kiotel:
+# REPOS_DIR=~/code/kiotel-team ./scripts/build-graph.sh
+# ./scripts/build-graph.sh --dry-run     # per-repo file/MB counts, copies nothing
 ```
 
-This copies the **source + docs** of all four repos into `./build-root/`, excluding deps,
-build output, binaries, and the hardware repo's vendored DLLs / OCR models (it includes only
-`kiosk_Source/` + the docs). It also drops `.graphifyignore` in place.
+This copies the **source + docs** of all 20 repos into `./build-root/<repo-name>/` (via
+`scripts/assemble-build-root.py`), excluding deps, build output, binaries, models, secrets
+(`.env`, `api_key*`, keys, Postman environments — `*.example` templates are kept) and any
+file over 1 MB. Two repos are special-cased (see the `REPOS` table in the script):
+
+- `kiosk_dashboard_windows_client` is a ClickOnce publish dump (~8k files, ~700 MB). Only
+  `docs/`, `multi-L-TTS/`, the release scripts and `Application Files/core_kiosk/kiosk_Source`
+  are copied (to `kiosk_Source/`).
+- `kiotel_dev_docs` is 3,400+ Bruno YAML request files. They are condensed to one
+  `<service>.md` API catalog per collection (`METHOD url — name`, grouped by folder).
+
+It also drops `.graphifyignore` in place. **Adding a repo = one line in `REPOS`**, one in
+`verify-graph.py`'s `REPOS`, then rerun.
 
 ## Step 3 — Build the graph
 
@@ -51,6 +62,8 @@ build output, binaries, and the hardware repo's vendored DLLs / OCR models (it i
 ```
 /graphify ./build-root --mode deep
 ```
+(Add `--no-gitignore` if the graph repo's own `.gitignore` — which lists `build-root/` —
+makes Graphify find 0 files.)
 
 Run that inside Claude Code. `--mode deep` extracts richer relationships; drop it for a
 faster first pass. Code parsing is local (tree-sitter); the docs/prose extraction uses your
@@ -60,8 +73,13 @@ Claude model.
 
 ```bash
 export ANTHROPIC_API_KEY=sk-...        # or OPENAI_API_KEY / GEMINI_API_KEY
-graphify extract ./build-root --backend anthropic
+cd build-root && graphify extract . --backend claude --mode deep --no-gitignore
+# no API key but Claude Code installed (Pro/Max plan)?  --backend claude-cli
+# (needs `claude` on PATH; the VS Code extension bundles claude.exe under
+#  ~/.vscode/extensions/anthropic.claude-code-*/resources/native-binary/)
 ```
+`--no-gitignore` is required: `build-root/` is git-ignored in this repo and Graphify honours
+that, which yields "found 0 code, 0 docs".
 
 Either way, output lands in `build-root/graphify-out/`:
 - `graph.json` — the queryable graph (this is the artifact the MCP serves)
@@ -73,18 +91,18 @@ Either way, output lands in `build-root/graphify-out/`:
 ```bash
 rm -rf graphify-out && mv build-root/graphify-out ./graphify-out
 # ALWAYS re-apply, in this order (schema extractors create nodes that repair-bridges target):
-python scripts/extract-db-schema-nodes.py graphify-out/graph.json build-root  # kiotel_web DB tables (db_schema_view.ts + migrations)
-python scripts/extract-prisma-nodes.py    graphify-out/graph.json build-root  # kiotel-space + kiotel-admin Prisma models/enums
-python scripts/apply-graph-repairs.py     graphify-out/graph.json             # curated repairs + concept->code + 15 cross-repo bridges
+python scripts/extract-db-schema-nodes.py graphify-out/graph.json build-root  # kiosk_dashboard DB tables (db_schema_view.ts + migrations)
+python scripts/extract-prisma-nodes.py    graphify-out/graph.json build-root  # kiotel-space + kiotel_admin_central Prisma models/enums
+python scripts/apply-graph-repairs.py     graphify-out/graph.json             # curated repairs + concept->code + cross-repo bridges
 python scripts/verify-graph.py            graphify-out/graph.json build-root  # PASS gate: coverage, connectivity, dangling, bridges, spot-check
 git add graphify-out README.md RUNBOOK.md scripts .graphifyignore mcp
 git commit -m "Kiotel combined knowledge graph"
 git push
 ```
 
-Open `graphify-out/graph.html` and skim `GRAPH_REPORT.md` — you should see four clusters
-(one per repo) plus cross-repo edges (kiosk↔platform, platform↔audit, platform↔pms) that the
-`docs/INTEGRATIONS.md` + `SYSTEM.md` files taught it.
+Open `graphify-out/graph.html` and skim `GRAPH_REPORT.md` — you should see one cluster per
+repo plus cross-repo edges (kiosk↔dashboard, dashboard↔AI audit, space↔admin, payments↔PMS
+aggregator…) from the curated bridges and the `docs/` of each repo.
 
 ## Step 5 — Serve it as MCP
 
@@ -130,11 +148,63 @@ Re-run steps 2–4. Graphify supports `--update` to re-extract only changed file
 subsequent builds are fast. Consider a CI job (there's a community `code-review-graph`
 action) that rebuilds on merge to keep the graph current.
 
+## Smoke-test the MCP server before merging / deploying
+
+Start the server exactly as production does (`mcp/metrics_server.py`), then run the smoke test.
+No Docker needed; with Docker, `docker compose up -d` serves the same code on :8080.
+
+```powershell
+# PowerShell (adjust the python path); bash users: export the same variables
+$env:GRAPH_PATH="graphify-out\graph.json"; $env:FILE_SIZES="graphify-out\file-sizes.json"
+$env:CORPUS_MANIFEST="graphify-out\manifest.json"; $env:BUILD_COST_JSON="graphify-out\cost.json"
+$env:DASHBOARD_HTML="mcp\dashboard.html"; $env:GRAPH_VIZ_HTML="graphify-out\graph.html"
+$env:METRICS_DB="$env:TEMP\metrics.db"; $env:PORT="8081"
+python mcp\metrics_server.py            # leave running
+
+python scripts/smoke-test-mcp.py http://localhost:8081   # in another terminal; exits non-zero on failure
+```
+
+It checks `/healthz`, `/stats`, `/dashboard`, `/graph`, that all 10 MCP tools exist, and that real
+cross-repo questions come back citing the right repos/files (payments → PMS aggregator, Space call
+token → communications gateway, AI services → transcription worker, Space → UI kit,
+`session_ai_audit`, kiosk ↔ platform). Point it at the deployed URL (`--api-key`) after a deploy.
+
+## Large graph.json (Git LFS evaluation, 2026-11-20)
+
+`graphify-out/graph.json` is committed as a plain file and is the largest artifact in the repo.
+
+| Fact | Value |
+|---|---|
+| Size now | ~50.3 MB raw (already past GitHub's ~50 MB warning line); ~2.1 MB gzip-compressed |
+| `.git` size with 7 historic versions | 5.5 MB (git stores it compressed), so each rebuild adds roughly 2 MB |
+| GitHub limits | regular files over 100 MB are rejected (a warning appears around 50 MB: commonly documented, confirm in [GitHub's docs](https://docs.github.com/en/repositories/working-with-files/managing-large-files/about-git-large-file-storage)); LFS allows files up to 2 GB on Free/Pro |
+| LFS cost | storage + bandwidth quotas apply and are billed past the included amount ([GitHub LFS billing](https://docs.github.com/en/billing/concepts/product-billing/git-lfs)); older docs quote 1 GB, current docs 10 GiB on Free, so confirm for the `nxgp` org |
+| How production is deployed | `scripts/deploy-do.sh` builds the image **locally** and pushes it to DOCR; App Platform never clones this repo, so LFS does not affect the live deploy |
+
+**Recommendation: do not enable LFS yet.** The file is under the 100 MB limit and its history cost
+is small, but it has crossed ~50 MB, so plan option 1 below before it nears 100 MB. LFS would also break the "no build required" path in the README: `git clone` without
+git-lfs installed gives a ~130-byte pointer file in place of `graph.json`, and `docker compose
+up` would then build an image that fails at startup. Every consumer, CI job and the deploy
+machine would need `git lfs install` + `git lfs pull`.
+
+`verify-graph.py` now has a size guard: it prints a warning at 45 MB and **fails the run at
+95 MB**, so the switch is planned rather than discovered by a rejected push. If it trips, in
+order of preference:
+
+1. **Commit a compressed artifact**: store `graph.json.gz` (~2 MB) and `gunzip` it in the
+   Dockerfile (`RUN gunzip -k graph.json.gz` before use). No extra tooling for consumers.
+2. **Git LFS**: `git lfs track "graphify-out/graph.json"`, commit `.gitattributes`, and update the
+   README/Dockerfile/CI to run `git lfs pull`. Do **not** run `git lfs migrate import` on a shared
+   branch (it rewrites history); that is Ravi's call.
+3. **Stop committing it**: publish `graph.json` as a release asset or only in the DOCR image.
+
 ## Troubleshooting
 
-- **Build root is huge / slow** → confirm the hardware repo only contributed `kiosk_Source`
-  + `docs` (check `du -sh build-root/*`); if a `.dll`/`.onnx`/`.resx` slipped in, add it to
-  `.graphifyignore`.
+- **Build root is huge / slow** → run `./scripts/build-graph.sh --dry-run`; the Windows
+  client must contribute ~175 files (not ~8,000). If a `.dll`/`.onnx`/`.resx` slipped in,
+  add it to `COMMON_EXCLUDE_GLOBS` in `assemble-build-root.py` and to `.graphifyignore`.
+- **"found 0 code, 0 docs"** → pass `--no-gitignore` (see step 3).
+- **"N .sql file(s) contributed nothing"** → `pip install "graphifyy[sql,terraform]"`.
 - **Graph has fewer nodes than a previous run** → Graphify refuses to overwrite by default;
   add `--force` only when you intend to shrink it.
 - **No cross-repo edges** → make sure `docs/INTEGRATIONS.md` and `docs/SYSTEM.md` made it
