@@ -80,14 +80,21 @@ def token_env():
     """Let git read the private org repos with KIOTEL_REPOS_TOKEN (a fine-grained PAT with
     read-only Contents access), the same way in CI and on a laptop. Uses git's env-based
     config so the token never appears in argv, a file or the printed output. Without the
-    variable, git falls back to whatever credentials the machine already has."""
+    variable, git falls back to whatever credentials the machine already has. With a token,
+    no credential helper and no interactive prompt is ever used."""
     tok = os.environ.get("KIOTEL_REPOS_TOKEN", "").strip()
     if not tok:
         return {}
     org = load_config()["org"]
-    return {"GIT_CONFIG_COUNT": "1",
+    # The second entry empties git's credential-helper list: with the token already in the URL,
+    # a helper such as Git Credential Manager must not be consulted. On a laptop that has saved
+    # GitHub logins it otherwise opens a "Select an account" window and the run waits for a click.
+    return {"GIT_CONFIG_COUNT": "2",
             "GIT_CONFIG_KEY_0": f"url.https://x-access-token:{tok}@github.com/{org}/.insteadOf",
-            "GIT_CONFIG_VALUE_0": f"https://github.com/{org}/"}
+            "GIT_CONFIG_VALUE_0": f"https://github.com/{org}/",
+            "GIT_CONFIG_KEY_1": "credential.helper",
+            "GIT_CONFIG_VALUE_1": "",
+            "GCM_INTERACTIVE": "never"}
 
 
 def require_credentials(args):
