@@ -138,9 +138,12 @@ jobs:
             body_file="$RUNNER_TEMP/pr-body.md"
             echo "Automated nightly update of the knowledge graph." > "$body_file"
           fi
-          if gh pr view "$PUBLISH_BRANCH" --json number >/dev/null 2>&1; then
-            gh pr edit "$PUBLISH_BRANCH" --body-file "$body_file"
-            echo "PR already open; branch and description updated"
+          # Only an OPEN PR counts. (`gh pr view <branch>` also finds merged/closed PRs, which would
+          # make the night after a merge skip creating a new PR.)
+          open_pr=$(gh pr list --head "$PUBLISH_BRANCH" --state open --json number --jq '.[0].number // empty')
+          if [ -n "$open_pr" ]; then
+            gh pr edit "$open_pr" --body-file "$body_file"
+            echo "PR #$open_pr is still open: branch and description updated"
           else
             if ! out=$(gh pr create --base "$base" --head "$PUBLISH_BRANCH" \
                  --title "graph: nightly update" --body-file "$body_file" 2>&1); then
