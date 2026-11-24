@@ -192,7 +192,7 @@ def render_pr_body(changed, prev, built, docs_diff, info, before, after, check=F
         L.append(f"- `{r}` ({built[r]['branch']}) `{old}` -> `{built[r]['sha'][:7]}`")
     if not changed:
         L.append("- none (forced rebuild)")
-    L += ["", "### Changed docs"]
+    L += ["", "### Changed docs and config files"]
     if docs_diff is None:
         L.append("_The list is unavailable for this run: the previous state has no doc manifest._")
     elif not docs_diff:
@@ -215,7 +215,8 @@ def render_pr_body(changed, prev, built, docs_diff, info, before, after, check=F
             if shown > 300:
                 L.append("- ... (list truncated)")
                 break
-    L += ["", "### Graph"]
+    if after or info:
+        L += ["", "### Graph"]
     if after:
         b = f"{before[0]:,} -> " if before else ""
         be = f"{before[1]:,} -> " if before else ""
