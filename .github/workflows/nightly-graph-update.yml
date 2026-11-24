@@ -74,9 +74,10 @@ jobs:
       # Carry Graphify's SEMANTIC cache from the previous night. This is what makes the run
       # incremental: unchanged docs/configs are cache hits and cost no tokens. (Only this part:
       # the AST cache embeds the build path in node ids and is cheap to recompute.)
+      # The committed copy in the checkout is the seed; the actions/cache copy (newer) overlays it.
       - name: Restore extraction cache
         id: cache
-        uses: actions/cache@v4
+        uses: actions/cache/restore@v4
         with:
           path: graphify-out/cache/semantic-deep
           key: graphify-cache-${{ github.run_id }}
@@ -93,7 +94,7 @@ jobs:
           if [ "$MODE" = "full" ] && [ -z "$ANTHROPIC_API_KEY" ]; then
             echo "::error::Secret ANTHROPIC_API_KEY is not set (needed for mode=full)."; exit 1
           fi
-          echo "extraction cache restored: ${{ steps.cache.outputs.cache-hit != '' && 'yes' || 'no (first run or evicted)' }}"
+          echo "actions/cache restored: ${{ steps.cache.outputs.cache-hit != '' && 'yes' || 'no (using the committed seed)' }}"
 
       - name: Let git read the private repos
         env:
@@ -133,3 +134,12 @@ jobs:
               --title "graph: nightly update" \
               --body "Automated nightly update of the knowledge graph. Only repos with new commits were re-extracted; the verifier and the MCP smoke test passed before this commit was made."
           fi
+
+      # Keep the cache even when verification or publish failed: tokens already spent on new or
+      # edited docs must not be spent again tomorrow.
+      - name: Save extraction cache
+        if: always() && steps.update.outcome != 'skipped'
+        uses: actions/cache/save@v4
+        with:
+          path: graphify-out/cache/semantic-deep
+          key: graphify-cache-${{ github.run_id }}

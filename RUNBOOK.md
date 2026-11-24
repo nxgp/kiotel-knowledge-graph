@@ -210,10 +210,13 @@ to `graph-nightly` and opens/updates a pull request.
    moved it stops: no clone, no AI, no PR.
 2. *File level*: Graphify's semantic cache is keyed by file content, so only new or edited
    docs/configs reach the AI; everything else is a cache hit. Code files are parsed locally and
-   cost no tokens. The workflow carries `graphify-out/cache/semantic-deep` between nights
-   (`actions/cache`). The AST cache is deliberately **not** reused: it stores the absolute
-   build path inside node ids, so a cache made under another path renames nodes and breaks
-   bridges (seen in testing).
+   cost no tokens. The semantic cache (`graphify-out/cache/semantic-deep`, ~0.7 MB of extracted
+   nodes/edges, no document text) is **committed to the repo as the seed**, so a fresh checkout
+   starts incrementally; the workflow also carries it with `actions/cache`, and saves it even
+   when a run fails, so tokens already spent are never spent twice. The AST cache is
+   deliberately **not** reused or committed: it stores the absolute build path inside node ids,
+   so a cache made under another path renames nodes and breaks bridges (seen in testing).
+   Measured: one edited README = 1 cache miss = ~87k tokens; a full rebuild is ~5.1M.
 
 **Steps of a run**: shallow-clone all repos (the Windows client with a sparse checkout) →
 assemble build-root → incremental `graphify extract` → DB/Prisma extractors → repairs and
@@ -229,10 +232,10 @@ good graph. The log prints only repo names and counts (this repo is public, the 
   Rough cost: nothing on a night with no commits; about $1 for a few changed doc sets;
   about $20 for a full rebuild (5.1M in / 0.4M out). Run-to-run cost scales with doc/config churn.
 - Settings > Actions > General > "Allow GitHub Actions to create and approve pull requests".
-- **First run only**: the cache does not exist yet, so the guard refuses a full AI pass. Start
-  it once from Actions > Nightly graph update > Run workflow with `allow_full_rebuild` ticked
-  (about 5M tokens). Later nights restore the cache. The same guard protects you if the cache
-  is ever evicted.
+- **First run**: nothing special. The committed seed cache means the first night is incremental
+  too. If the seed is ever deleted *and* `actions/cache` has expired, the guard refuses a full
+  AI pass (about 5M tokens, ~$20); re-run once with `allow_full_rebuild` ticked if that cost is
+  intended.
 
 **Branches**: `scripts/nightly-config.json` lists the branch each repo is graphed from
 (default `main`). Needs the lead's confirmation: `kiosk_dashboard_windows_client` (`main` is

@@ -2,8 +2,11 @@
 build-root/
 
 # Keep the built graph (graphify-out/) committed — it's what the MCP serves.
-# But ignore Graphify's incremental cache.
-graphify-out/cache/
+# Graphify's cache: keep ONLY the semantic cache (small: ~0.6 MB of extracted nodes/edges, no
+# document text). It is the seed that lets a fresh checkout (the nightly CI run) re-extract only
+# what changed. The AST cache embeds absolute build paths and is never committed.
+graphify-out/cache/*
+!graphify-out/cache/semantic-deep/
 
 # OS / editor cruft
 .DS_Store

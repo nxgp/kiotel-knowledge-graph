@@ -1,0 +1,1 @@
+{"nodes": [{"id": "docs_contracts_overview", "label": "The contract overview", "file_type": "document", "source_file": "kiotel_pms_aggregator_service/docs/contracts/overview.md"}, {"id": "contract_schemas", "label": "PMS provider v1 JSON Schemas", "file_type": "concept", "source_file": "kiotel_pms_aggregator_service/docs/contracts/overview.md"}], "edges": [], "hyperedges": []}

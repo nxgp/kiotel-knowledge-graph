@@ -12,7 +12,8 @@ What "only update what changed" means here (two levels):
      immediately: no clone, no AI, nothing to publish.
   2. File level. Graphify keys its semantic cache by file content, so only new or edited docs/
      config files are sent to the AI; everything else is a cache hit. The semantic cache
-     (graphify-out/cache/semantic-deep) is carried between runs by the workflow (actions/cache).
+     (graphify-out/cache/semantic-deep, ~0.6 MB, committed as the seed and also carried by
+     actions/cache, saved even when a run fails) is reused between runs.
      Code files are parsed locally (tree-sitter) and cost no tokens, so the AST cache is NOT
      reused: it stores the absolute path of the build root inside node ids, so a cache made
      under one path produces renamed/missing nodes (and broken bridges) under another.
@@ -257,6 +258,20 @@ def smoke_test(runner, out: Path, port_env_base):
             srv.kill()
 
 
+def check_report_is_fresh(out: Path):
+    """GRAPH_REPORT.md must describe the graph being published (guards the stale-report bug)."""
+    g = json.loads((out / "graph.json").read_text(encoding="utf-8"))
+    report = out / "GRAPH_REPORT.md"
+    if not report.exists():
+        raise StageError("GRAPH_REPORT.md is missing from the build output")
+    head = report.read_text(encoding="utf-8", errors="replace")[:2000]
+    m = re.search(r"(\d+) nodes", head)
+    if not m or int(m.group(1)) != len(g["nodes"]):
+        raise StageError(f"GRAPH_REPORT.md is stale: it reports {m.group(1) if m else '?'} nodes but "
+                         f"graph.json has {len(g['nodes'])}")
+    print(f"  [ok] report matches graph ({len(g['nodes'])} nodes)")
+
+
 def build(args, assemble, repos, repos_dir: Path, work: Path, runner, prev_out: Path):
     """Assemble + incremental extract + post-processing + verify + smoke. Returns (out_dir, info)."""
     build_root = work / "build-root"
@@ -287,6 +302,13 @@ def build(args, assemble, repos, repos_dir: Path, work: Path, runner, prev_out: 
             shutil.rmtree(target, ignore_errors=True)
         elif target.exists():
             target.unlink()
+    # Persist the new semantic-cache entries NOW, before verify/smoke/publish. They are
+    # content-keyed and valid regardless of what happens next, so a failed night must not make
+    # the next night pay the AI for the same files again.
+    if (out / "cache").is_dir():
+        (prev_out / "cache").mkdir(parents=True, exist_ok=True)
+        shutil.copytree(out / "cache", prev_out / "cache", dirs_exist_ok=True,
+                        ignore=shutil.ignore_patterns(*UNPORTABLE_CACHE))
     for f in (".graphify_labels.json", "cost.json"):          # carried over from the published graph
         if (prev_out / f).exists():
             shutil.copyfile(prev_out / f, out / f)
@@ -299,6 +321,13 @@ def build(args, assemble, repos, repos_dir: Path, work: Path, runner, prev_out: 
                                 f"--backend={args.backend}"], env=os.environ.copy())
     runner.run("label", gr + ["label", build_root, "--graph", g, "--missing-only",
                               f"--backend={args.backend}"], env=os.environ.copy())
+    # cluster-only and label write GRAPH_REPORT.md and the community names into
+    # <build-root>/graphify-out, not next to graph.json. Collect them, or the published report
+    # and graph.html would silently keep last night's community names and numbers.
+    side = build_root / "graphify-out"
+    for name in ("GRAPH_REPORT.md", ".graphify_labels.json"):
+        if (side / name).exists():
+            shutil.copyfile(side / name, out / name)
     for d in out.glob("20*"):                                  # dated backups graphify leaves behind
         shutil.rmtree(d, ignore_errors=True)
     runner.run("export-graph-html", [PY, HERE / "scripts" / "export-graph-html.py", g])
@@ -307,6 +336,7 @@ def build(args, assemble, repos, repos_dir: Path, work: Path, runner, prev_out: 
     if "tokens_in" in info:
         meta += ["--input-tokens", info["tokens_in"], "--output-tokens", info.get("tokens_out", 0)]
     runner.run("write-build-metadata", meta)
+    check_report_is_fresh(out)
     runner.run("verify-graph", [PY, HERE / "scripts" / "verify-graph.py", g, build_root])
     smoke_test(runner, out, None)
     return out, info

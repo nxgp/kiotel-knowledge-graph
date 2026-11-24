@@ -1,0 +1,1 @@
+{"nodes": [], "edges": [{"source": "kiotel_frontend", "target": "kiotel_backend", "relation": "calls", "confidence": "EXTRACTED", "confidence_score": 0.9, "source_file": "kiosk_dashboard/docs/frontend/data-layer.md", "source_location": null, "weight": 1}], "hyperedges": []}
