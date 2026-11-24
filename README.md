@@ -39,6 +39,9 @@ scripts/verify-graph.py      PASS/FAIL gate: coverage, per-repo counts, dangling
 scripts/smoke-test-mcp.py    real-query smoke test of a running MCP server (HTTP endpoints, 10 tools, cross-repo questions)
 scripts/export-graph-html.py aggregated community view -> graphify-out/graph.html (graph is >5k nodes)
 scripts/write-build-metadata.py  file-sizes.json + cost.json for the metrics dashboard
+scripts/nightly-update.py     nightly incremental update: detect changed repos, re-extract only what changed, verify, publish
+scripts/nightly-config.json  org + the branch each repo is graphed from
+.github/workflows/nightly-graph-update.yml   runs the above every night (see RUNBOOK 'Nightly update')
 .graphifyignore              what to exclude from the graph (deps, binaries, models, secrets)
 graphify-out/                the built graph: graph.json (served), graph.html (viz),
                              GRAPH_REPORT.md (god nodes, audit trail), manifest.json, cost.json
@@ -97,6 +100,15 @@ join the repos into one queryable component:
 - `scripts/bridges.json` — **47** concept→code edges, re-anchored onto the current doc/concept
   nodes. 47 of the original 94 had no counterpart in the rewritten docs (or the code they pointed to was
   deleted) and were dropped, not guessed.
+
+## Nightly updates
+
+A GitHub Actions workflow keeps the graph current: each night it compares the latest commit of
+every repo with `graphify-out/source-state.json`, stops if nothing moved, and otherwise
+re-extracts only what changed (Graphify's content-keyed semantic cache means only new or edited
+docs reach the AI), verifies the result and opens/updates a PR on `graph-nightly`. It never
+pushes to the default branch. Setup (two secrets, one repo setting) and the run commands are in
+[`RUNBOOK.md`](RUNBOOK.md#nightly-update-github-actions).
 
 ## Use it (no build required)
 

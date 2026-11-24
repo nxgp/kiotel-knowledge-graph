@@ -1,0 +1,15 @@
+{
+  "_comment": "Config for scripts/nightly-update.py. The list of repos comes from REPOS in assemble-build-root.py; this file only says where they live and which branch each one is graphed from. The branches marked UNCONFIRMED were my proposal and still need the lead's OK.",
+  "org": "kiotel-team",
+  "default_branch": "main",
+  "branches": {
+    "kiosk_dashboard_windows_client": "main",
+    "kiosk_ai_avatar": "master",
+    "kiosk_pms_autofill_extension": "master",
+    "kiotel_communications_services": "master"
+  },
+  "_unconfirmed": [
+    "kiosk_dashboard_windows_client: main is 28+ commits ahead of its default branch (development)",
+    "kiotel_communications_services: main and master have diverged; master has the recent work"
+  ]
+}

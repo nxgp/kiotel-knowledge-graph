@@ -198,6 +198,65 @@ order of preference:
    branch (it rewrites history); that is Ravi's call.
 3. **Stop committing it**: publish `graph.json` as a release asset or only in the DOCR image.
 
+## Nightly update (GitHub Actions)
+
+`.github/workflows/nightly-graph-update.yml` runs `scripts/nightly-update.py` every night
+(20:30 UTC) so the graph follows the code. It never pushes to the default branch: it commits
+to `graph-nightly` and opens/updates a pull request.
+
+**What "only update what changed" means**
+1. *Repo level*: it reads the latest commit of every repo (`git ls-remote`) and compares with
+   `graphify-out/source-state.json`, the commits the published graph was built from. If nothing
+   moved it stops: no clone, no AI, no PR.
+2. *File level*: Graphify's semantic cache is keyed by file content, so only new or edited
+   docs/configs reach the AI; everything else is a cache hit. Code files are parsed locally and
+   cost no tokens. The workflow carries `graphify-out/cache/semantic-deep` between nights
+   (`actions/cache`). The AST cache is deliberately **not** reused: it stores the absolute
+   build path inside node ids, so a cache made under another path renames nodes and breaks
+   bridges (seen in testing).
+
+**Steps of a run**: shallow-clone all repos (the Windows client with a sparse checkout) →
+assemble build-root → incremental `graphify extract` → DB/Prisma extractors → repairs and
+bridges → cluster + label → graph.html → metadata → `verify-graph.py` → MCP smoke test →
+publish. A failing stage stops the run *before* publish, so a bad build never replaces the
+good graph. The log prints only repo names and counts (this repo is public, the code is not).
+
+**Setup an admin must do once**
+- Secret `KIOTEL_REPOS_TOKEN`: fine-grained PAT or app token with read access to the
+  `kiotel-team` repos (all 20). The graph repo is in `nxgp`, so `GITHUB_TOKEN` cannot read them.
+- Secret `ANTHROPIC_API_KEY`: the semantic pass in CI (the Claude Code login is not available).
+  Default model `claude-sonnet-4-6`, Graphify's built-in price is $3 / $15 per 1M tokens.
+  Rough cost: nothing on a night with no commits; about $1 for a few changed doc sets;
+  about $20 for a full rebuild (5.1M in / 0.4M out). Run-to-run cost scales with doc/config churn.
+- Settings > Actions > General > "Allow GitHub Actions to create and approve pull requests".
+- **First run only**: the cache does not exist yet, so the guard refuses a full AI pass. Start
+  it once from Actions > Nightly graph update > Run workflow with `allow_full_rebuild` ticked
+  (about 5M tokens). Later nights restore the cache. The same guard protects you if the cache
+  is ever evicted.
+
+**Branches**: `scripts/nightly-config.json` lists the branch each repo is graphed from
+(default `main`). Needs the lead's confirmation: `kiosk_dashboard_windows_client` (`main` is
+ahead of its default `development`) and `kiotel_communications_services` (`main` and `master`
+diverged; `master` has the recent work).
+
+**Run it by hand** (Actions > Run workflow): `mode=check` clones and assembles only (no AI, use
+it to prove the token works), `mode=full publish=false` builds and verifies without committing,
+`publish=true` also opens the PR, `force` rebuilds even if nothing changed.
+A push to the PR branch that touches the workflow/script also runs `check` mode; remove that
+`push:` trigger once the workflow is merged if you do not want it.
+
+**Run it locally** (uses existing clones and your Claude Code login):
+```bash
+python scripts/nightly-update.py init-state --repos-dir ../kiotel      # baseline (already committed)
+python scripts/nightly-update.py run --source local --repos-dir ../kiotel     --backend claude-cli --work-dir ./nightly-work [--publish] [--force] [--mode check]
+python scripts/nightly-update.py run --source remote --backend claude-cli   # clones from GitHub
+```
+`--graph-out DIR` points it at a scratch copy of `graphify-out` so you can rehearse a publish.
+
+**If a night fails**: nothing was published. The usual cause is `verify-graph.py` reporting
+broken bridges after a doc rewrite renamed an AI-named concept node; fix the bridge in
+`scripts/bridges.json` / `scripts/cross-repo-bridges.json` (as in the 2026-11-20 rebuild) and re-run.
+
 ## Troubleshooting
 
 - **Build root is huge / slow** → run `./scripts/build-graph.sh --dry-run`; the Windows

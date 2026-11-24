@@ -1,0 +1,86 @@
+{
+ "built_at": "2026-11-24T05:19:07+00:00",
+ "note": "baseline written by init-state from local clones",
+ "repos": {
+  "kiosk_dashboard": {
+   "branch": "main",
+   "sha": "1c8dec2b1f298de2b238fefa870e46b09d83399f"
+  },
+  "kiosk_dashboard_windows_client": {
+   "branch": "main",
+   "sha": "90a105c5fdd30414a5da4838b568f70df7e8232c"
+  },
+  "kiosk_pms_autofill_extension": {
+   "branch": "master",
+   "sha": "b0b0b0c256700b204e50918683f42de0de9aaacd"
+  },
+  "kiosk_ai_services": {
+   "branch": "main",
+   "sha": "f4aa38f5fc8d25dbf815d621a735dc26520a975d"
+  },
+  "kiotel_transcription_service": {
+   "branch": "main",
+   "sha": "d697f904d0f10b90b147197b626a1e22684d0e98"
+  },
+  "kiotel_vision_ai_services": {
+   "branch": "main",
+   "sha": "1fc296f38cbe2d2bc87a44e398673e7683016093"
+  },
+  "kiosk_ai_avatar": {
+   "branch": "master",
+   "sha": "a8a1248f91b999915cd64a699cf8ecdc24f59f17"
+  },
+  "kiotel_admin_central": {
+   "branch": "main",
+   "sha": "d1bf6190250e9efec99f466c5dae103d11998ae8"
+  },
+  "kiotel-space": {
+   "branch": "main",
+   "sha": "cc2a13e91e00f0d4ee86c0b26651fb86f0c5de05"
+  },
+  "kiotel_communications_services": {
+   "branch": "master",
+   "sha": "a5ec1357f685e8961ffc52a36e4e06ec48f8b07b"
+  },
+  "kiotel_internal_operations_portal": {
+   "branch": "main",
+   "sha": "0394523cb52e85522a6b917830537b63c929398b"
+  },
+  "kiotel_internal_operations_backend": {
+   "branch": "main",
+   "sha": "e740574084f928eeb299e25c83971a73c14d933c"
+  },
+  "kiotel_ui_kit": {
+   "branch": "main",
+   "sha": "843be4a2e40c2ae3c421bf5703b66d7c1960d866"
+  },
+  "kiotel_pms_aggregator_service": {
+   "branch": "main",
+   "sha": "9cd814e1f4faf37cbc3314f02dbcad75a789600d"
+  },
+  "kiotel_payment_aggregator_service": {
+   "branch": "main",
+   "sha": "d85ca0e231147e4ab19976833df4ea8033f8ee46"
+  },
+  "kiotel_channel_manager": {
+   "branch": "main",
+   "sha": "10366eae9fb3df0a43cd3136ab80c8aee7cef1cf"
+  },
+  "kiotel-pms": {
+   "branch": "main",
+   "sha": "98c0271024605b78466baa6562921032e8910053"
+  },
+  "kiotel_lox": {
+   "branch": "main",
+   "sha": "d9155100417d65b9eb972c68ffb0ad864a8280e0"
+  },
+  "kiotel_chatbot_service": {
+   "branch": "main",
+   "sha": "d318e6381f0e1cf3fce422b787a3e485dc3f9fb2"
+  },
+  "kiotel_dev_docs": {
+   "branch": "main",
+   "sha": "4ffe83669f18a6127fbdd1c823486d110badddd6"
+  }
+ }
+}

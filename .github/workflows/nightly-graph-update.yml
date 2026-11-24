@@ -1,0 +1,135 @@
+name: Nightly graph update
+
+# Keeps the knowledge graph in step with the code. Every night it checks the latest commit of
+# all repos; if none moved it stops (no clone, no AI). Otherwise it clones them, re-extracts
+# only what changed (Graphify's content-keyed cache => only new/edited docs reach the AI),
+# verifies the result and opens/updates a pull request. It never pushes to the default branch.
+#
+# Needs two repository secrets (see RUNBOOK "Nightly update"):
+#   KIOTEL_REPOS_TOKEN  read access to the private kiotel-team repos (fine-grained PAT or app token)
+#   ANTHROPIC_API_KEY   for the semantic pass (not needed for mode=check)
+# And Settings > Actions > General > "Allow GitHub Actions to create and approve pull requests".
+#
+# Public repo: never add a pull_request trigger (forks) and never upload logs/artifacts; the
+# code being graphed is private. The script prints only repo names and counts.
+
+on:
+  schedule:
+    - cron: "30 20 * * *"            # nightly, 20:30 UTC
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "full = update the graph; check = clone + assemble only (no AI)"
+        type: choice
+        options: [full, check]
+        default: full
+      force:
+        description: "Rebuild even if no repo has new commits"
+        type: boolean
+        default: false
+      publish:
+        description: "Commit the result to the graph-nightly branch and open/update a PR"
+        type: boolean
+        default: false
+      allow_full_rebuild:
+        description: "Allow a full AI pass if the cache is missing (about 5M tokens, ~$20)"
+        type: boolean
+        default: false
+  # Validation hook for the PR that introduces this workflow: a push to the PR branch runs the
+  # no-AI check mode so the clone/assemble path can be exercised before the schedule exists.
+  push:
+    branches: [update-graph-current-repos]
+    paths:
+      - ".github/workflows/nightly-graph-update.yml"
+      - "scripts/nightly-update.py"
+      - "scripts/nightly-config.json"
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: nightly-graph-update
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    timeout-minutes: 240
+    env:
+      ORG: kiotel-team
+      PUBLISH_BRANCH: graph-nightly
+      MODE: ${{ github.event_name == 'workflow_dispatch' && inputs.mode || (github.event_name == 'push' && 'check' || 'full') }}
+      PUBLISH: ${{ github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && inputs.publish) }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install Graphify (pinned, same as the Dockerfile) and the Anthropic backend
+        run: pip install "graphifyy[mcp,sql,terraform,anthropic]==0.9.25" "mcp<2" networkx
+
+      # Carry Graphify's SEMANTIC cache from the previous night. This is what makes the run
+      # incremental: unchanged docs/configs are cache hits and cost no tokens. (Only this part:
+      # the AST cache embeds the build path in node ids and is cheap to recompute.)
+      - name: Restore extraction cache
+        id: cache
+        uses: actions/cache@v4
+        with:
+          path: graphify-out/cache/semantic-deep
+          key: graphify-cache-${{ github.run_id }}
+          restore-keys: graphify-cache-
+
+      - name: Check required secrets
+        env:
+          KIOTEL_REPOS_TOKEN: ${{ secrets.KIOTEL_REPOS_TOKEN }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          if [ -z "$KIOTEL_REPOS_TOKEN" ]; then
+            echo "::error::Secret KIOTEL_REPOS_TOKEN is not set (read access to the $ORG repos)."; exit 1
+          fi
+          if [ "$MODE" = "full" ] && [ -z "$ANTHROPIC_API_KEY" ]; then
+            echo "::error::Secret ANTHROPIC_API_KEY is not set (needed for mode=full)."; exit 1
+          fi
+          echo "extraction cache restored: ${{ steps.cache.outputs.cache-hit != '' && 'yes' || 'no (first run or evicted)' }}"
+
+      - name: Let git read the private repos
+        env:
+          KIOTEL_REPOS_TOKEN: ${{ secrets.KIOTEL_REPOS_TOKEN }}
+        run: |
+          git config --global url."https://x-access-token:${KIOTEL_REPOS_TOKEN}@github.com/${ORG}/".insteadOf "https://github.com/${ORG}/"
+
+      - name: Update the graph (only what changed)
+        id: update
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          GRAPHIFY_BACKEND: claude
+        run: |
+          args=(run --source remote --work-dir "$RUNNER_TEMP/nightly" --mode "$MODE")
+          if [ "$PUBLISH" = "true" ] && [ "$MODE" = "full" ]; then args+=(--publish); fi
+          if [ "${{ github.event_name == 'workflow_dispatch' && inputs.force }}" = "true" ]; then args+=(--force); fi
+          if [ "${{ github.event_name == 'workflow_dispatch' && inputs.allow_full_rebuild }}" = "true" ]; then args+=(--allow-full-rebuild); fi
+          python scripts/nightly-update.py "${args[@]}"
+
+      - name: Open or update the pull request (never pushes to the default branch)
+        if: steps.update.outputs.changed == 'true' && env.PUBLISH == 'true' && env.MODE == 'full'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout -B "$PUBLISH_BRANCH"
+          git add graphify-out
+          if git diff --cached --quiet; then echo "graph files unchanged, nothing to publish"; exit 0; fi
+          git commit -m "graph: nightly update (${{ steps.update.outputs.changed_count }} repo(s) with new commits)"
+          git push --force origin "$PUBLISH_BRANCH"
+          base="${{ github.event.repository.default_branch }}"
+          if gh pr view "$PUBLISH_BRANCH" --json number >/dev/null 2>&1; then
+            echo "PR already open; branch updated"
+          else
+            gh pr create --base "$base" --head "$PUBLISH_BRANCH" \
+              --title "graph: nightly update" \
+              --body "Automated nightly update of the knowledge graph. Only repos with new commits were re-extracted; the verifier and the MCP smoke test passed before this commit was made."
+          fi
