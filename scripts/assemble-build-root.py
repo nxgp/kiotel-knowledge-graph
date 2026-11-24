@@ -31,7 +31,8 @@ import sys
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent.parent
-BUILD_ROOT = HERE / "build-root"
+# BUILD_ROOT can be redirected (the nightly workflow stages its build outside the repo).
+BUILD_ROOT = Path(os.environ.get("BUILD_ROOT") or (HERE / "build-root")).resolve()
 MAX_FILE_BYTES = 1_000_000
 
 COMMON_EXCLUDE_DIRS = {
@@ -111,9 +112,13 @@ REPOS = {
 
 def excluded_file(name: str) -> bool:
     # keep documented templates (.env.example, dev.env.example, *.sample) — never real env files
-    if name.endswith((".example", ".sample", ".template")):
+    low = name.lower()
+    if low.endswith((".example", ".sample", ".template")):
         return False
-    return any(fnmatch.fnmatch(name, g) for g in COMMON_EXCLUDE_GLOBS)
+    # fnmatchcase on lower-cased text: identical results on Windows (case-insensitive
+    # fnmatch) and on the Linux CI runner (case-sensitive), so the nightly build matches
+    # what a developer gets locally.
+    return any(fnmatch.fnmatchcase(low, g.lower()) for g in COMMON_EXCLUDE_GLOBS)
 
 
 def excluded_path(fp: Path) -> bool:
