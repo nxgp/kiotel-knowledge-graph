@@ -30,6 +30,7 @@ only repo names, counts and token totals are printed. Tool output is kept in <wo
 (never uploaded). Use --verbose locally to see everything.
 """
 import argparse
+import hashlib
 import importlib.util
 import json
 import os
@@ -75,8 +76,38 @@ def branch_for(cfg, repo):
     return cfg.get("branches", {}).get(repo, cfg.get("default_branch", "main"))
 
 
+def token_env():
+    """Let git read the private org repos with KIOTEL_REPOS_TOKEN (a fine-grained PAT with
+    read-only Contents access), the same way in CI and on a laptop. Uses git's env-based
+    config so the token never appears in argv, a file or the printed output. Without the
+    variable, git falls back to whatever credentials the machine already has."""
+    tok = os.environ.get("KIOTEL_REPOS_TOKEN", "").strip()
+    if not tok:
+        return {}
+    org = load_config()["org"]
+    return {"GIT_CONFIG_COUNT": "1",
+            "GIT_CONFIG_KEY_0": f"url.https://x-access-token:{tok}@github.com/{org}/.insteadOf",
+            "GIT_CONFIG_VALUE_0": f"https://github.com/{org}/"}
+
+
+def require_credentials(args):
+    """Fail early and clearly when a required secret is missing (placeholders in the workflow)."""
+    if args.source == "remote" and not os.environ.get("KIOTEL_REPOS_TOKEN", "").strip() \
+            and os.environ.get("GITHUB_ACTIONS"):
+        raise StageError(
+            "KIOTEL_REPOS_TOKEN is not set. Add a repository secret with that exact name: a "
+            "fine-grained personal access token with read-only 'Contents' access to the "
+            "kiotel-team repos (repo Settings > Secrets and variables > Actions).")
+    if args.mode == "full" and args.backend == "claude" \
+            and not os.environ.get("ANTHROPIC_API_KEY", "").strip():
+        raise StageError(
+            "ANTHROPIC_API_KEY is not set. Add a repository secret with that exact name (the AI "
+            "step that reads new or edited docs needs it; check mode does not). Locally you can "
+            "use --backend claude-cli instead.")
+
+
 def git(*args, cwd=None, check=True):
-    env = {**os.environ, "GIT_TERMINAL_PROMPT": "0"}
+    env = {**os.environ, "GIT_TERMINAL_PROMPT": "0", **token_env()}
     r = subprocess.run(["git", *args], cwd=cwd, env=env, capture_output=True, text=True,
                        encoding="utf-8", errors="replace")
     if check and r.returncode != 0:
@@ -98,6 +129,96 @@ def local_head(path: Path):
     if sha.returncode != 0:
         return None, None
     return sha.stdout.strip(), br.stdout.strip()
+
+
+def doc_manifest(build_root: Path) -> dict:
+    """{relative path: short content hash} of every doc/paper/image Graphify would send to the
+    AI (classified with Graphify's own classify_file). Content-based, so it works with shallow
+    clones and matches how the semantic cache decides what is 'changed'."""
+    from graphify.detect import FileType, classify_file
+    keep = (FileType.DOCUMENT, FileType.PAPER, FileType.IMAGE)
+    out = {}
+    for dp, dns, fns in os.walk(build_root):
+        dns[:] = [d for d in dns if d != "graphify-out"]
+        for fn in fns:
+            fp = Path(dp) / fn
+            try:
+                if classify_file(fp) in keep:
+                    out[fp.relative_to(build_root).as_posix()] = \
+                        hashlib.sha256(fp.read_bytes()).hexdigest()[:16]
+            except OSError:
+                continue
+    return out
+
+
+def diff_docs(prev_docs, cur_docs):
+    """{repo: {"added": [...], "modified": [...], "removed": [...]}} or None without a baseline."""
+    if not prev_docs:
+        return None
+    res = {}
+    for path in sorted(set(prev_docs) | set(cur_docs)):
+        kind = ("added" if path not in prev_docs else "removed" if path not in cur_docs
+                else "modified" if prev_docs[path] != cur_docs[path] else None)
+        if kind:
+            res.setdefault(path.split("/", 1)[0],
+                           {"added": [], "modified": [], "removed": []})[kind].append(path)
+    return res
+
+
+def graph_counts(graph_json: Path):
+    try:
+        g = json.loads(graph_json.read_text(encoding="utf-8"))
+        return len(g["nodes"]), len(g.get("links", g.get("edges", [])))
+    except Exception:
+        return None
+
+
+def render_pr_body(changed, prev, built, docs_diff, info, before, after, check=False, cap=40):
+    prev_repos = (prev or {}).get("repos", {})
+    L = ["Automated nightly update of the knowledge graph. Only repos with new commits were "
+         "re-extracted; unchanged docs came from the cache."
+         + (" (Check mode: nothing was published.)" if check else
+            " The verifier and the MCP smoke test passed before this commit was made."), ""]
+    L.append(f"### Repos with new commits ({len(changed)})")
+    for r in changed:
+        old = prev_repos.get(r, {}).get("sha", "")[:7] or "new"
+        L.append(f"- `{r}` ({built[r]['branch']}) `{old}` -> `{built[r]['sha'][:7]}`")
+    if not changed:
+        L.append("- none (forced rebuild)")
+    L += ["", "### Changed docs"]
+    if docs_diff is None:
+        L.append("_The list is unavailable for this run: the previous state has no doc manifest._")
+    elif not docs_diff:
+        L.append("No doc, image or paper changed; only code changed, so no AI was needed.")
+    else:
+        n_add = sum(len(v["added"]) for v in docs_diff.values())
+        n_mod = sum(len(v["modified"]) for v in docs_diff.values())
+        n_rem = sum(len(v["removed"]) for v in docs_diff.values())
+        L.append(f"{n_add} added, {n_mod} modified, {n_rem} removed.")
+        shown = 0
+        for repo, v in docs_diff.items():
+            L += ["", f"**{repo}**: {len(v['added'])} added, {len(v['modified'])} modified, "
+                      f"{len(v['removed'])} removed"]
+            for kind, mark in (("added", "+"), ("modified", "~"), ("removed", "-")):
+                for path in v[kind][:cap]:
+                    L.append(f"- `{mark}` {path[len(repo) + 1:]}")
+                    shown += 1
+                if len(v[kind]) > cap:
+                    L.append(f"- ... and {len(v[kind]) - cap} more {kind}")
+            if shown > 300:
+                L.append("- ... (list truncated)")
+                break
+    L += ["", "### Graph"]
+    if after:
+        b = f"{before[0]:,} -> " if before else ""
+        be = f"{before[1]:,} -> " if before else ""
+        L.append(f"- nodes: {b}{after[0]:,}; edges: {be}{after[1]:,}")
+    if info:
+        total = info.get("cache_hit", 0) + info.get("cache_miss", 0)
+        L.append(f"- AI re-read {info.get('cache_miss', 0)} of {total} doc/config files (the rest came "
+                 f"from the cache); tokens {info.get('tokens_in', 0):,} in / "
+                 f"{info.get('tokens_out', 0):,} out")
+    return "\n".join(L) + "\n"
 
 
 def load_state(path: Path):
@@ -365,8 +486,25 @@ def cmd_init_state(args):
     cur = {r: {"branch": branch_for(cfg, r), "sha": cur[r]["sha"]} for r in repos}
     state = {"built_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
              "note": "baseline written by init-state from local clones", "repos": cur}
+    br = Path(args.build_root)
+    if br.is_dir():
+        state["docs"] = doc_manifest(br)
+        state["graph"] = dict(zip(("nodes", "edges"),
+                                  graph_counts(HERE / "graphify-out" / "graph.json") or (0, 0)))
     Path(args.state).write_text(json.dumps(state, indent=1), encoding="utf-8")
-    print(f"wrote {args.state}: {len(cur)} repos")
+    print(f"wrote {args.state}: {len(cur)} repos, {len(state.get('docs', {}))} docs in the manifest")
+    return 0
+
+
+def cmd_init_docs(args):
+    """Add/refresh only the doc manifest (and graph counts) of an existing state file, leaving
+    its repo commits alone. The manifest must describe the build the published graph came from."""
+    sp = Path(args.state)
+    state = json.loads(sp.read_text(encoding="utf-8"))
+    state["docs"] = doc_manifest(Path(args.build_root))
+    state["graph"] = dict(zip(("nodes", "edges"), graph_counts(Path(args.graph_json)) or (0, 0)))
+    sp.write_text(json.dumps(state, indent=1), encoding="utf-8")
+    print(f"updated {sp.name}: {len(state['docs'])} docs, graph {state['graph']}")
     return 0
 
 
@@ -381,6 +519,7 @@ def cmd_run(args):
     prev = load_state(state_path)
 
     print(f"Nightly graph update: {len(repos)} repos, source={args.source}, mode={args.mode}")
+    require_credentials(args)
     cur = resolve_current(args, repos, cfg)
     changed, removed = diff_state(repos, cur, prev, compare_branch=(args.source == "remote"))
     print(f"  repos with new commits: {len(changed)}/{len(repos)}"
@@ -409,7 +548,17 @@ def cmd_run(args):
     if args.mode == "check":
         env = {**os.environ, "REPOS_DIR": str(repos_dir), "BUILD_ROOT": str(work / "build-root")}
         runner.run("assemble-build-root", [PY, HERE / "scripts" / "assemble-build-root.py"], env=env)
+        docs_now = doc_manifest(work / "build-root")
+        docs_diff = diff_docs((prev or {}).get("docs"), docs_now)
+        body = render_pr_body(changed, prev, built, docs_diff, None, None, None, check=True)
+        (work / "pr-body.md").write_text(body, encoding="utf-8")
+        gh_output(pr_body=str(work / "pr-body.md"))
+        n_docs = sum(len(x["added"]) + len(x["modified"]) + len(x["removed"])
+                     for x in (docs_diff or {}).values())
         print("Check mode: every repo was readable and the build root assembled. No AI was used.")
+        print("  changed docs since the last graph: "
+              + ("unknown (no baseline manifest)" if docs_diff is None
+                 else f"{n_docs} in {len(docs_diff)} repo(s)"))
         gh_summary(f"### Nightly graph update (check)\n{len(changed)} repo(s) have new commits; "
                    "clone and assemble succeeded. No AI used.")
         return 0
@@ -424,10 +573,24 @@ def cmd_run(args):
                          "(about 5M tokens). Restore the cache, or re-run with --allow-full-rebuild "
                          "(workflow input allow_full_rebuild) if that cost is intended.")
 
+    before = graph_counts(repo_graph_out / "graph.json")
     out, info = build(args, assemble, repos, repos_dir, work, runner, repo_graph_out)
 
+    docs_now = doc_manifest(work / "build-root")
+    docs_diff = diff_docs((prev or {}).get("docs"), docs_now)
+    after = graph_counts(out / "graph.json")
+    body = render_pr_body(changed, prev, built, docs_diff, info, before, after)
+    (work / "pr-body.md").write_text(body, encoding="utf-8")
+    gh_output(pr_body=str(work / "pr-body.md"))
+    n_docs = sum(len(x["added"]) + len(x["modified"]) + len(x["removed"])
+                 for x in (docs_diff or {}).values())
+    print("  changed docs since the last graph: "
+          + ("unknown (no baseline manifest)" if docs_diff is None
+             else f"{n_docs} in {len(docs_diff)} repo(s)"))
+
     state = {"built_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
-             "repos": built,
+             "repos": built, "docs": docs_now,
+             "graph": dict(zip(("nodes", "edges"), after or (0, 0))),
              "last_run": {"changed_repos": changed, **info}}
     if args.publish:
         publish(out, state, repo_graph_out, state_path)
@@ -468,8 +631,15 @@ def main():
     r.set_defaults(fn=cmd_run)
     i = sub.add_parser("init-state", help="write source-state.json from local clones")
     i.add_argument("--repos-dir", required=True)
+    i.add_argument("--build-root", default=str(HERE / "build-root"),
+                   help="build input of the published graph (for the doc manifest)")
     i.add_argument("--state", default=str(DEFAULT_STATE))
     i.set_defaults(fn=cmd_init_state)
+    d = sub.add_parser("init-docs", help="add the doc manifest to an existing state file")
+    d.add_argument("--build-root", default=str(HERE / "build-root"))
+    d.add_argument("--graph-json", default=str(HERE / "graphify-out" / "graph.json"))
+    d.add_argument("--state", default=str(DEFAULT_STATE))
+    d.set_defaults(fn=cmd_init_docs)
     args = ap.parse_args()
     if args.cmd == "run" and args.source == "local" and not args.repos_dir:
         ap.error("--source local needs --repos-dir")

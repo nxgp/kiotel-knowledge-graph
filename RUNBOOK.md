@@ -237,6 +237,37 @@ good graph. The log prints only repo names and counts (this repo is public, the 
   AI pass (about 5M tokens, ~$20); re-run once with `allow_full_rebuild` ticked if that cost is
   intended.
 
+**Changed-docs detection and the PR description**: `graphify-out/source-state.json` stores a
+manifest of every doc/image Graphify sends to the AI (path + content hash, the same files
+Graphify classifies as documents) next to the commit of every repo. A run diffs it against the
+freshly assembled build, so it knows exactly which docs were added, modified or removed since the
+published graph, and writes `pr-body.md` for the nightly PR: repos with new commits (old -> new
+commit), the changed docs per repo (capped), graph size before/after and how many files the AI
+actually re-read. Note: this lists doc paths of private repos in a public repo's PR (graph.json
+already contains the same paths); say so if that is not acceptable and the list can be reduced
+to counts. Refresh the manifest of an existing state file with
+`python scripts/nightly-update.py init-docs` (it must describe the build the published graph came from).
+
+**Secrets are placeholders until added**: the first workflow step stops with an error that names
+the missing secret and where to add it (`KIOTEL_REPOS_TOKEN` always; `ANTHROPIC_API_KEY` for
+`mode=full`). If the PR permission is off, the publish step pushes `graph-nightly`, then fails
+with a message naming the setting to enable.
+
+**Validate locally with your own read-only token** (no AI key needed for check mode):
+1. GitHub > Settings > Developer settings > Personal access tokens > Fine-grained tokens >
+   Generate new token. Resource owner `kiotel-team` (an org owner may have to approve it),
+   repository access to the 20 repos, permission Contents: Read-only, a short expiry.
+2. In your terminal only (never in a file, commit or chat):
+   ```powershell
+   $env:KIOTEL_REPOS_TOKEN = "<paste token>"
+   python scripts/nightly-update.py run --source remote --mode check --work-dir ./nightly-work
+   ```
+   The script passes the token to git through git's environment config (not argv, not a file,
+   never printed). Check mode clones all repos, assembles the build, lists the changed docs and
+   writes `nightly-work/pr-body.md`. Drop `--mode check` (and add `--backend claude-cli` to use
+   your Claude Code login) for the full update; add `--publish --graph-out <scratch copy>` to
+   rehearse the publish without touching the repo's `graphify-out`.
+
 **Branches**: `scripts/nightly-config.json` lists the branch each repo is graphed from
 (default `main`). Needs the lead's confirmation: `kiosk_dashboard_windows_client` (`main` is
 ahead of its default `development`) and `kiotel_communications_services` (`main` and `master`

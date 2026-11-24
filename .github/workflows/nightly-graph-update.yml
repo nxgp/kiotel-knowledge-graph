@@ -5,10 +5,12 @@ name: Nightly graph update
 # only what changed (Graphify's content-keyed cache => only new/edited docs reach the AI),
 # verifies the result and opens/updates a pull request. It never pushes to the default branch.
 #
-# Needs two repository secrets (see RUNBOOK "Nightly update"):
-#   KIOTEL_REPOS_TOKEN  read access to the private kiotel-team repos (fine-grained PAT or app token)
+# Needs two repository secrets (see RUNBOOK "Nightly update"). Until they are added the run
+# stops at the first step with a clear error naming the missing secret:
+#   KIOTEL_REPOS_TOKEN  fine-grained PAT, read-only "Contents" access to the kiotel-team repos
 #   ANTHROPIC_API_KEY   for the semantic pass (not needed for mode=check)
-# And Settings > Actions > General > "Allow GitHub Actions to create and approve pull requests".
+# And, only to open the nightly PR: Settings > Actions > General > "Allow GitHub Actions to
+# create and approve pull requests". If it is off, the publish step says so and fails.
 #
 # Public repo: never add a pull_request trigger (forks) and never upload logs/artifacts; the
 # code being graphed is private. The script prints only repo names and counts.
@@ -64,6 +66,24 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # Fail fast and clearly if a required secret has not been added yet.
+      - name: Check required secrets
+        env:
+          KIOTEL_REPOS_TOKEN: ${{ secrets.KIOTEL_REPOS_TOKEN }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          missing=0
+          if [ -z "$KIOTEL_REPOS_TOKEN" ]; then
+            echo "::error title=Missing secret KIOTEL_REPOS_TOKEN::Add a repository secret named KIOTEL_REPOS_TOKEN: a fine-grained personal access token with read-only 'Contents' access to the $ORG repos (Settings > Secrets and variables > Actions)."
+            missing=1
+          fi
+          if [ "$MODE" = "full" ] && [ -z "$ANTHROPIC_API_KEY" ]; then
+            echo "::error title=Missing secret ANTHROPIC_API_KEY::Add a repository secret named ANTHROPIC_API_KEY (the AI step that reads new or edited docs needs it; mode=check does not)."
+            missing=1
+          fi
+          if [ "$missing" != 0 ]; then exit 1; fi
+          echo "required secrets are present"
+
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
@@ -83,28 +103,14 @@ jobs:
           key: graphify-cache-${{ github.run_id }}
           restore-keys: graphify-cache-
 
-      - name: Check required secrets
-        env:
-          KIOTEL_REPOS_TOKEN: ${{ secrets.KIOTEL_REPOS_TOKEN }}
-          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      - name: Report cache status
         run: |
-          if [ -z "$KIOTEL_REPOS_TOKEN" ]; then
-            echo "::error::Secret KIOTEL_REPOS_TOKEN is not set (read access to the $ORG repos)."; exit 1
-          fi
-          if [ "$MODE" = "full" ] && [ -z "$ANTHROPIC_API_KEY" ]; then
-            echo "::error::Secret ANTHROPIC_API_KEY is not set (needed for mode=full)."; exit 1
-          fi
-          echo "actions/cache restored: ${{ steps.cache.outputs.cache-hit != '' && 'yes' || 'no (using the committed seed)' }}"
-
-      - name: Let git read the private repos
-        env:
-          KIOTEL_REPOS_TOKEN: ${{ secrets.KIOTEL_REPOS_TOKEN }}
-        run: |
-          git config --global url."https://x-access-token:${KIOTEL_REPOS_TOKEN}@github.com/${ORG}/".insteadOf "https://github.com/${ORG}/"
+          echo "actions/cache restored? ${{ steps.cache.outputs.cache-hit != '' && 'yes' || 'no (using the committed seed)' }}"
 
       - name: Update the graph (only what changed)
         id: update
         env:
+          KIOTEL_REPOS_TOKEN: ${{ secrets.KIOTEL_REPOS_TOKEN }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           GRAPHIFY_BACKEND: claude
         run: |
@@ -127,12 +133,24 @@ jobs:
           git commit -m "graph: nightly update (${{ steps.update.outputs.changed_count }} repo(s) with new commits)"
           git push --force origin "$PUBLISH_BRANCH"
           base="${{ github.event.repository.default_branch }}"
+          body_file="${{ steps.update.outputs.pr_body }}"
+          if [ ! -f "$body_file" ]; then
+            body_file="$RUNNER_TEMP/pr-body.md"
+            echo "Automated nightly update of the knowledge graph." > "$body_file"
+          fi
           if gh pr view "$PUBLISH_BRANCH" --json number >/dev/null 2>&1; then
-            echo "PR already open; branch updated"
+            gh pr edit "$PUBLISH_BRANCH" --body-file "$body_file"
+            echo "PR already open; branch and description updated"
           else
-            gh pr create --base "$base" --head "$PUBLISH_BRANCH" \
-              --title "graph: nightly update" \
-              --body "Automated nightly update of the knowledge graph. Only repos with new commits were re-extracted; the verifier and the MCP smoke test passed before this commit was made."
+            if ! out=$(gh pr create --base "$base" --head "$PUBLISH_BRANCH" \
+                 --title "graph: nightly update" --body-file "$body_file" 2>&1); then
+              echo "$out"
+              if echo "$out" | grep -qi "not permitted to create or approve pull requests"; then
+                echo "::error title=Actions may not create pull requests::The graph was pushed to $PUBLISH_BRANCH but the PR could not be opened. Enable Settings > Actions > General > Workflow permissions > 'Allow GitHub Actions to create and approve pull requests' (an org owner may need to allow it first), then re-run."
+              fi
+              exit 1
+            fi
+            echo "$out"
           fi
 
       # Keep the cache even when verification or publish failed: tokens already spent on new or
