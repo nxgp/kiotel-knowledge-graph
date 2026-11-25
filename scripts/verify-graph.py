@@ -22,11 +22,20 @@ import sys
 from collections import Counter, defaultdict
 from pathlib import Path
 
+# Current kiotel-team repo names (same list as REPOS in assemble-build-root.py).
 REPOS = [
-    "kiotel_web", "kiotel-pms", "kiotel_hardware", "audio_services",
-    "kiotel_space", "kiotel_admin", "kiotel_portal_front", "chatbot",
-    "hr_kiotel_backend", "kiotel_lox", "stt_tts_inhouse", "guest_translation",
-    "speech_to_text_serverless", "kiotel_pms_autofill",
+    # kiosk platform
+    "kiosk_dashboard", "kiosk_dashboard_windows_client", "kiosk_pms_autofill_extension",
+    "kiosk_ai_services", "kiotel_transcription_service", "kiotel_vision_ai_services",
+    "kiosk_ai_avatar",
+    # identity + workspace
+    "kiotel_admin_central", "kiotel-space", "kiotel_communications_services",
+    "kiotel_internal_operations_portal", "kiotel_internal_operations_backend", "kiotel_ui_kit",
+    # integrations
+    "kiotel_pms_aggregator_service", "kiotel_payment_aggregator_service",
+    "kiotel_channel_manager", "kiotel-pms", "kiotel_lox", "kiotel_chatbot_service",
+    # API collections (catalog markdown)
+    "kiotel_dev_docs",
 ]
 
 
@@ -45,7 +54,21 @@ def main(graph_path: str, build_root: str) -> int:
     ids = {n["id"] for n in nodes}
     fail = False
 
-    print(f"GRAPH: {len(nodes):,} nodes, {len(edges):,} edges\n")
+    print(f"GRAPH: {len(nodes):,} nodes, {len(edges):,} edges")
+
+    # 0. SIZE GUARD - graph.json is committed as a plain file. GitHub warns on files over
+    #    ~50 MB and rejects files over 100 MB. When this trips, see RUNBOOK "Large graph.json".
+    size_mb = Path(graph_path).stat().st_size / 1e6
+    if size_mb >= 95:
+        print(f"SIZE: graph.json is {size_mb:.1f} MB - over the 95 MB guard (GitHub rejects >100 MB). "
+              "Switch to Git LFS or a compressed artifact (RUNBOOK 'Large graph.json').")
+        fail = True
+    elif size_mb >= 45:
+        print(f"SIZE: graph.json is {size_mb:.1f} MB - nearing GitHub's 50 MB warning / 100 MB limit; "
+              "plan the switch (RUNBOOK 'Large graph.json').")
+    else:
+        print(f"SIZE: graph.json {size_mb:.1f} MB (ok)")
+    print()
 
     # 1 + 2. coverage and per-repo counts
     covered = {n.get("source_file", "") for n in nodes if n.get("source_file")}

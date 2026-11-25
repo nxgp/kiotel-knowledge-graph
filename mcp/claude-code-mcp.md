@@ -13,7 +13,7 @@ graph and query:
 
 ```
 /graphify query "what connects the kiosk to the platform?"
-/graphify path "kiosk_Source/kiosk/frmMainScreen.cs" "audio_services ingest"
+/graphify path "kiosk_dashboard_windows_client/kiosk_Source/kiosk/frmMainScreen.cs" "kiosk_ai_services ingest"
 /graphify explain "session_ai_audit"
 ```
 
@@ -106,7 +106,7 @@ saved. `/stats` returns the same as JSON. Metrics live in SQLite under the conta
 - "Where does a guest's ID scan data flow, end to end?"
 - "What reads `property_rules`, and why?"
 - "Which files handle the RELAY command protocol?"
-- "What are the god-nodes / most-connected components in `kiotel_web`?"
+- "What are the god-nodes / most-connected components in `kiosk_dashboard`?"
 - "How does the platform tell the kiosk to start recording?"
 - "What's the difference between the deployed audit engine and `conversation-intelligence`?"
 
@@ -120,11 +120,16 @@ Verified against the live server (graphify 0.9.25):
 - Fuzzy start matching can pull lexical strays (asking about a DB "table" can match the UI `Table()` component). Prefer distinctive identifiers.
 - Provenance is explicit on every edge: `EXTRACTED` (98%) is structural fact, `INFERRED` (2%) includes the curated cross-repo concept→code bridges, `AMBIGUOUS` is a flagged uncertainty.
 
-## Known corpus issues (verified against source, 2026-07-23)
+## Known corpus issues (re-verified against the current repos, 2026-11-19)
 
-- **SECURITY: hardcoded Deepgram API key** at `audio_services/stt-tts-using-api-only/app/config.py:6`. Rotate the key and move it to env. (The key does **not** appear in `graph.json` or the extraction cache — verified.)
-- `stt-tts-using-api-only` README claims ElevenLabs Scribe; the code exclusively uses **Deepgram nova-3**. The graph keeps this reference edge as documentation of the discrepancy.
-- `kiotel_web` frontend ships the five stock Next.js starter SVGs unused (no source references them).
+- **SECURITY (history): a Deepgram API key was hardcoded** in `kiosk_ai_services/stt-tts-using-api-only/app/config.py`. The current file defaults `deepgram_api_key` to `""`, so the working tree is clean, but the old key is still in git history — rotate it if that has not been done. (It never appears in `graph.json`.)
+- **SECURITY: `kiosk_ai_avatar/api_key_for_github.txt` is tracked in that repo's git.** The build deliberately excludes `api_key*` files and `*.env`, so it is not in the graph; the file itself still needs removing from the repo and the credential rotating.
+- `kiosk_ai_services/stt-tts-using-api-only` still mentions ElevenLabs in its README and a few code comments while `app/core/transcriber.py` uses Deepgram; treat the README as stale. The graph keeps the reference edge as documentation of the discrepancy.
+- `kiosk_dashboard/core/frontend/public` still ships the stock Next.js starter SVGs (`file`, `globe`, `next`, `vercel`, `window`).
+- `kiosk_dashboard/core/backend/src/db/db_schema_view.ts` is **stale**: it does not document `session_ai_audit` or `session_events`, which migrations create (reported by `extract-db-schema-nodes.py`; the graph adds table nodes for both from the migrations).
+- Doc concept nodes are named by the LLM pass, so ids like `kiosk_ai_services_audit_pipeline` are not stable across rebuilds. `scripts/bridges.json` was re-anchored for the 2026-11-19 rebuild; 47 of the 94 older concept→code bridges had no counterpart in the rewritten docs (or pointed at deleted code) and were dropped rather than guessed.
+- `kiotel_dev_docs` is condensed to one API-catalog markdown per service, and includes the `kiotel_vision_ai_services` collection (that repo is graphed too, since 2026-11-20).
+- `kiotel_channel_manager` is an early skeleton (about 20 files, no code-level links to other repos yet).
 
 ## Refresh
 
